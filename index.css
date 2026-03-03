@@ -267,6 +267,16 @@ td {
     }
 }
 
+/* Manual attendance select styling */
+#manual-emp-select {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+#manual-emp-select option {
+    color: var(--text-main);
+    background: var(--background);
+}
+
 .spin {
     animation: spin 4s linear infinite;
 }
