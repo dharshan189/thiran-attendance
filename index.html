@@ -177,6 +177,20 @@
         </div>
       </div>
 
+
+      <!-- Manual Attendance Panel -->
+      <div class="glass-card fade-in" id="manual-attendance-panel" style="padding:1.5rem; margin-bottom:2rem;">
+        <h4 style="margin-bottom:1rem; font-size:1.1rem; font-weight:600;">Manual Attendance</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
+          <select id="manual-emp-select" class="input-field" style="min-width:200px;">
+            <option value="">Select Employee</option>
+          </select>
+          <input type="number" id="manual-meet-index" class="input-field" placeholder="Meeting #" min="1" max="50" style="width:100px;">
+          <button id="mark-present-btn" class="btn-primary">Mark Present</button>
+          <button id="mark-absent-btn" class="btn-outline">Mark Absent</button>
+        </div>
+      </div>
+
       <!-- Matrix Table -->
       <div class="table-container fade-in">
         <table id="admin-table">
