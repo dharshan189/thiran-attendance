@@ -16,6 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateClock, 1000);
     setInterval(refreshUI, 2000); // UI Refresh only
     lucide.createIcons();
+
+    // wire up manual attendance buttons
+    const presentBtn = document.getElementById('mark-present-btn');
+    const absentBtn = document.getElementById('mark-absent-btn');
+    if (presentBtn) {
+        presentBtn.onclick = () => {
+            const emp = document.getElementById('manual-emp-select').value;
+            const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
+            manualAttendance(emp, meet, true);
+        };
+    }
+    if (absentBtn) {
+        absentBtn.onclick = () => {
+            const emp = document.getElementById('manual-emp-select').value;
+            const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
+            manualAttendance(emp, meet, false);
+        };
+    }
+
     window.addEventListener('beforeunload', (e) => {
         if (isTracking) {
             e.preventDefault();
@@ -97,6 +116,8 @@ function logout() {
 // ADMIN CORE
 function renderAdmin() {
     const head = document.getElementById('table-headers');
+    // ensure manual attendance select is populated each time admin view renders
+    populateManualAttendance();
     const body = document.getElementById('table-body');
     const linkInput = document.getElementById('meet-link-input');
     const postBtn = document.getElementById('post-btn');
@@ -287,6 +308,39 @@ function resetMatrix() {
         notify('Matrix Reset Successfully', 'red');
         renderAdmin();
     }
+}
+
+// Manual attendance helpers
+function populateManualAttendance() {
+    const select = document.getElementById('manual-emp-select');
+    if (!select) return;
+    select.innerHTML = '<option value="">Select Employee</option>';
+    EMPLOYEES_LIST.forEach(emp => {
+        select.innerHTML += `<option value="${emp}">${emp}</option>`;
+    });
+}
+
+/**
+ * Mark or clear attendance manually for a specific employee/meeting.
+ * @param {string} empName
+ * @param {number} meetNum 1-based
+ * @param {boolean} present if true add present record, if false remove record
+ */
+function manualAttendance(empName, meetNum, present) {
+    if (!empName) return notify('Choose an employee first', 'red');
+    if (!meetNum || meetNum < 1 || meetNum > 50) return notify('Invalid meeting number', 'red');
+    const index = meetNum - 1;
+    // remove any existing record for that slot
+    attendanceRecordsArray = attendanceRecordsArray.filter(r => !(r.name === empName && r.sessionIndex === index));
+    if (present) {
+        attendanceRecordsArray.push({ id: Date.now(), name: empName, status: 'Present', meetLink: activeMeetLink || 'manual', sessionIndex: index });
+    }
+    // bump conductedCount if we're marking a future session
+    if (index >= conductedCount) {
+        conductedCount = index + 1;
+    }
+    notify(`Manual attendance ${present ? 'added' : 'cleared'} for ${empName} (Meet ${meetNum})`, present ? 'green' : 'red');
+    renderAdmin();
 }
 
 function downloadSheet() {
