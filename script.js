@@ -1,5 +1,5 @@
 /* Thiran Attendance Tracker - Pure Array Concept (In-Memory Only) */
-const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S'];
+const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M'];
 
 let currentUser = null;
 let attendanceRecordsArray = []; // Primary Storage: Array Concept
@@ -8,7 +8,7 @@ let conductedCount = 0;
 let isTracking = false;
 let trackerTimer = 0;
 let trackingInterval = null;
-let isInputActive = false;
+let selectedEmployees = new Set();
 
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,21 +17,44 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshUI, 2000); // UI Refresh only
     lucide.createIcons();
 
+    // wire up dropdown toggle
+    const dropdownBtn = document.getElementById('emp-dropdown-btn');
+    const dropdown = document.getElementById('emp-dropdown');
+    if (dropdownBtn && dropdown) {
+        dropdownBtn.onclick = () => {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        };
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
     // wire up manual attendance buttons
     const presentBtn = document.getElementById('mark-present-btn');
     const absentBtn = document.getElementById('mark-absent-btn');
     if (presentBtn) {
         presentBtn.onclick = () => {
-            const emp = document.getElementById('manual-emp-select').value;
+            const checkboxes = document.querySelectorAll('#emp-dropdown input[type="checkbox"]:checked');
+            const selectedEmps = Array.from(checkboxes).map(cb => cb.value);
             const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
-            manualAttendance(emp, meet, true);
+            selectedEmps.forEach(emp => manualAttendance(emp, meet, true));
+            // Uncheck after marking
+            selectedEmployees.clear();
+            updateSelectedCount();
         };
     }
     if (absentBtn) {
         absentBtn.onclick = () => {
-            const emp = document.getElementById('manual-emp-select').value;
+            const checkboxes = document.querySelectorAll('#emp-dropdown input[type="checkbox"]:checked');
+            const selectedEmps = Array.from(checkboxes).map(cb => cb.value);
             const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
-            manualAttendance(emp, meet, false);
+            selectedEmps.forEach(emp => manualAttendance(emp, meet, false));
+            // Uncheck after marking
+            selectedEmployees.clear();
+            updateSelectedCount();
         };
     }
 
@@ -88,7 +111,8 @@ if (loginForm) {
         } else {
             const map = {
                 'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
-                'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S'
+                'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
+                'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P', 'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M'
             };
             const cleanUser = user?.toLowerCase();
             if (cleanUser && map[cleanUser] && pass === 'thiran*2026') {
@@ -312,12 +336,57 @@ function resetMatrix() {
 
 // Manual attendance helpers
 function populateManualAttendance() {
-    const select = document.getElementById('manual-emp-select');
-    if (!select) return;
-    select.innerHTML = '<option value="">Select Employee</option>';
+    const container = document.getElementById('emp-dropdown');
+    if (!container) return;
+    container.innerHTML = '';
     EMPLOYEES_LIST.forEach(emp => {
-        select.innerHTML += `<option value="${emp}">${emp}</option>`;
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '0.5rem';
+        label.style.fontSize = '0.9rem';
+        label.style.cursor = 'pointer';
+        label.style.padding = '0.5rem';
+        label.style.borderRadius = '0.25rem';
+        label.style.transition = 'background 0.2s';
+        label.style.width = '100%';
+        label.onmouseover = () => label.style.background = 'rgba(255,255,255,0.1)';
+        label.onmouseout = () => label.style.background = 'transparent';
+        label.onclick = (e) => e.stopPropagation(); // Prevent dropdown from closing when clicking label
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = emp;
+        checkbox.style.margin = '0';
+        checkbox.style.flexShrink = '0';
+        checkbox.checked = selectedEmployees.has(emp);
+        checkbox.onchange = () => {
+            if (checkbox.checked) {
+                selectedEmployees.add(emp);
+            } else {
+                selectedEmployees.delete(emp);
+            }
+            updateSelectedCount();
+        };
+        label.appendChild(checkbox);
+        const span = document.createElement('span');
+        span.textContent = emp;
+        span.style.whiteSpace = 'nowrap';
+        span.style.overflow = 'hidden';
+        span.style.textOverflow = 'ellipsis';
+        span.style.flex = '1';
+        span.style.minWidth = '0';
+        label.appendChild(span);
+        container.appendChild(label);
     });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkedCount = selectedEmployees.size;
+    const span = document.getElementById('selected-count');
+    if (span) {
+        span.textContent = checkedCount > 0 ? `${checkedCount} selected` : 'Select Employees';
+    }
 }
 
 /**
@@ -335,11 +404,26 @@ function manualAttendance(empName, meetNum, present) {
     if (present) {
         attendanceRecordsArray.push({ id: Date.now(), name: empName, status: 'Present', meetLink: activeMeetLink || 'manual', sessionIndex: index });
     }
-    // bump conductedCount if we're marking a future session
-    if (index >= conductedCount) {
-        conductedCount = index + 1;
-    }
+    // By default we do **not** change conductedCount when manually editing a session.
+    // The previous implementation automatically advanced the count which caused
+    // earlier meetings to be flagged as absent for everyone. Keeping the value
+    // unchanged ensures only the targeted meeting is updated. If you already
+    // track meetings through the live link or another mechanism, that logic
+    // will manage `conductedCount` separately.
+    //
+    // Uncomment the block below if you still want manual marking of the *next*
+    // meeting to advance the count automatically:
+    //
+    // if (index >= conductedCount) {
+    //     conductedCount = index + 1;
+    // }
+
     notify(`Manual attendance ${present ? 'added' : 'cleared'} for ${empName} (Meet ${meetNum})`, present ? 'green' : 'red');
+    // redraw admin view to reflect new state; conductedCount may still be lower
+    // than the marked meeting and that's okay because we only want to show the
+    // record itself, not force absences elsewhere.
+    renderAdmin();
+    return;
     renderAdmin();
 }
 
