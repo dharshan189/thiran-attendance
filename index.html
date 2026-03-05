@@ -181,13 +181,19 @@
       <!-- Manual Attendance Panel -->
       <div class="glass-card fade-in" id="manual-attendance-panel" style="padding:1.5rem; margin-bottom:2rem;">
         <h4 style="margin-bottom:1rem; font-size:1.1rem; font-weight:600;">Manual Attendance</h4>
-        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
-          <select id="manual-emp-select" class="input-field" style="min-width:200px;">
-            <option value="">Select Employee</option>
-          </select>
+        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
           <input type="number" id="manual-meet-index" class="input-field" placeholder="Meeting #" min="1" max="50" style="width:100px;">
           <button id="mark-present-btn" class="btn-primary">Mark Present</button>
           <button id="mark-absent-btn" class="btn-outline">Mark Absent</button>
+          <div style="position: relative; margin-left: auto;">
+            <button id="emp-dropdown-btn" class="input-field" style="min-width:250px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+              <span id="selected-count">Select Employees</span>
+              <i data-lucide="chevron-down" size="16"></i>
+            </button>
+            <div id="emp-dropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.5rem; max-height: 250px; overflow-y: auto; z-index: 10; display: none; padding: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+              <!-- Checkboxes will be populated here -->
+            </div>
+          </div>
         </div>
       </div>
 
