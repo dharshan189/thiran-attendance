@@ -284,3 +284,12 @@ td {
 .spin-fast {
     animation: spin 2s linear infinite;
 }
+
+/* Prevent copying of meeting link */
+#current-link-text {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none; /* Prevent interactions that might allow copying */
+}
