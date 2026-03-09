@@ -10,12 +10,44 @@ let trackerTimer = 0;
 let trackingInterval = null;
 let selectedEmployees = new Set();
 
+// Load data from localStorage
+function loadData() {
+    const storedRecords = localStorage.getItem('attendanceRecords');
+    if (storedRecords) {
+        attendanceRecordsArray = JSON.parse(storedRecords);
+    }
+    const storedLink = localStorage.getItem('activeMeetLink');
+    if (storedLink) {
+        activeMeetLink = storedLink;
+    }
+    const storedCount = localStorage.getItem('conductedCount');
+    if (storedCount) {
+        conductedCount = parseInt(storedCount, 10);
+    }
+}
+
+// Save data to localStorage
+function saveData() {
+    localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecordsArray));
+    localStorage.setItem('activeMeetLink', activeMeetLink);
+    localStorage.setItem('conductedCount', conductedCount.toString());
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
+    loadData(); // Load persisted data
     updateClock();
     setInterval(updateClock, 1000);
     setInterval(refreshUI, 2000); // UI Refresh only
     lucide.createIcons();
+
+    // Restrict right-click for employees
+    document.addEventListener('contextmenu', function(e) {
+        if (currentUser && currentUser.role === 'employee') {
+            e.preventDefault();
+            notify('Right click is restricted', 'red');
+        }
+    });
 
     // wire up dropdown toggle
     const dropdownBtn = document.getElementById('emp-dropdown-btn');
@@ -219,8 +251,8 @@ function renderEmployee() {
         joinBtn.style.borderColor = 'var(--secondary)';
     } else if (activeMeetLink) {
         status.innerText = 'Admin has posted a live meeting link. Join now to start your 20-min session.';
-        display.style.display = 'flex';
-        linkText.innerText = activeMeetLink;
+        display.style.display = 'flex'; // Show the link display
+        linkText.innerText = activeMeetLink; // Show the link
         joinBtn.innerText = 'Attend Meeting';
         joinBtn.disabled = false;
         joinBtn.className = 'btn-primary';
@@ -231,6 +263,12 @@ function renderEmployee() {
         joinBtn.className = 'btn-primary';
         joinBtn.style.opacity = '0.5';
     }
+
+    // Show attendance history for employees
+    const historySection = document.querySelector('#employee-view .table-container');
+    if (historySection) historySection.style.display = 'block';
+    const progressSection = document.getElementById('progress-strip').parentElement;
+    if (progressSection) progressSection.style.display = 'block';
 
     const myRecs = attendanceRecordsArray.filter(r => r.name === currentUser.name);
     if (hHead && hBody) {
@@ -288,6 +326,7 @@ function startTracking() {
         renderEmployee();
         if (trackerTimer >= 1200) {
             attendanceRecordsArray.push({ id: Date.now(), name: currentUser.name, status: 'Present', meetLink: activeMeetLink, sessionIndex: conductedCount });
+            saveData(); // Persist the attendance record
             resetTracking();
             notify('SUCCESS! 20-min Attendance Confirmed', 'green');
             renderEmployee();
@@ -312,6 +351,7 @@ function updateMeetLink() {
     const link = document.getElementById('meet-link-input').value;
     if (!link.includes('meet.google.com')) return notify('Error: Invalid Google Meet link!', 'red');
     activeMeetLink = link;
+    saveData(); // Persist the link
     notify('Meet Link Posted Globally!', 'green');
     renderAdmin();
 }
@@ -320,6 +360,7 @@ function terminateSession() {
     if (activeMeetLink) conductedCount++;
     activeMeetLink = '';
     document.getElementById('meet-link-input').value = '';
+    saveData(); // Persist the changes
     notify('Global Media Session Ended', 'red');
     renderAdmin();
 }
@@ -329,6 +370,7 @@ function resetMatrix() {
         attendanceRecordsArray = [];
         conductedCount = 0;
         activeMeetLink = '';
+        saveData(); // Persist the reset
         notify('Matrix Reset Successfully', 'red');
         renderAdmin();
     }
@@ -422,6 +464,7 @@ function manualAttendance(empName, meetNum, present) {
     // redraw admin view to reflect new state; conductedCount may still be lower
     // than the marked meeting and that's okay because we only want to show the
     // record itself, not force absences elsewhere.
+    saveData(); // Persist the attendance change
     renderAdmin();
     return;
     renderAdmin();
