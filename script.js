@@ -10,8 +10,9 @@ let trackerTimer = 0;
 let trackingInterval = null;
 let selectedEmployees = new Set();
 
-// Load data from localStorage
-function loadData() {
+// Load data from localStorage and (when deployed) from the server
+async function loadData() {
+    // Local fallback (works for file:// or single-user local testing)
     const storedRecords = localStorage.getItem('attendanceRecords');
     if (storedRecords) {
         attendanceRecordsArray = JSON.parse(storedRecords);
@@ -24,21 +25,73 @@ function loadData() {
     if (storedCount) {
         conductedCount = parseInt(storedCount, 10);
     }
+
+    // If deployed on a hosting platform (like Vercel), keep data synced across users
+    await syncFromServer();
 }
 
-// Save data to localStorage
+// Save data locally and sync to server (if available)
 function saveData() {
     localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecordsArray));
     localStorage.setItem('activeMeetLink', activeMeetLink);
     localStorage.setItem('conductedCount', conductedCount.toString());
+    syncToServer();
+}
+
+// Try to sync data from the remote Vercel API (shared across users)
+async function syncFromServer() {
+    try {
+        const resp = await fetch('/api/load');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data) return;
+
+        // Update local state only if it's different (prevents flicker)
+        if (JSON.stringify(data.attendanceRecords) !== JSON.stringify(attendanceRecordsArray)) {
+            attendanceRecordsArray = data.attendanceRecords || [];
+        }
+        if (data.activeMeetLink !== undefined && data.activeMeetLink !== activeMeetLink) {
+            activeMeetLink = data.activeMeetLink;
+        }
+        if (typeof data.conductedCount === 'number' && data.conductedCount !== conductedCount) {
+            conductedCount = data.conductedCount;
+        }
+    } catch (err) {
+        // Fail silently; keep using local storage values.
+        console.warn('Could not sync data from server', err);
+    }
+}
+
+// Try to push local changes to the remote Vercel API
+async function syncToServer() {
+    try {
+        await fetch('/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                attendanceRecords: attendanceRecordsArray,
+                activeMeetLink,
+                conductedCount
+            })
+        });
+    } catch (err) {
+        // Quiet failure is okay; app still works locally.
+        console.warn('Could not sync data to server', err);
+    }
 }
 
 // INIT
-document.addEventListener('DOMContentLoaded', () => {
-    loadData(); // Load persisted data
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadData(); // Load persisted data and attempt to sync from server
     updateClock();
     setInterval(updateClock, 1000);
-    setInterval(refreshUI, 2000); // UI Refresh only
+
+    // Refresh UI frequently, and keep data in sync with the API when deployed.
+    setInterval(async () => {
+        await syncFromServer();
+        refreshUI();
+    }, 2500);
+
     lucide.createIcons();
 
     // Restrict right-click for employees
