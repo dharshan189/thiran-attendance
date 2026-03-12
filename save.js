@@ -2,6 +2,11 @@
 import { sharedData } from './storage';
 
 export default function handler(req, res) {
+    // Prevent Vercel from caching the response
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (req.method === 'POST') {
         const { attendanceRecords, activeMeetLink, conductedCount } = req.body;
         sharedData.attendanceRecords = attendanceRecords || [];
