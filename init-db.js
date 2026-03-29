@@ -44,7 +44,17 @@ export default async function handler(req, res) {
             );
         `;
 
-        // 5. Seed the users table
+        // 5. Create table for users
+        await sql`
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                full_name TEXT NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL
+            );
+        `;
+
+        // 6. Seed the users table
         await sql`
             INSERT INTO users (username, full_name, password, role) VALUES 
             ('thiran', 'Thiran MD', 'admin@thiran', 'admin'),
