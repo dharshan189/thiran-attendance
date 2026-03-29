@@ -9,9 +9,10 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
         try {
             const { attendanceRecords, conductedCount, tasksArray } = req.body;
+            console.log(`Saving cloud state: ${attendanceRecords?.length} records, ${tasksArray?.length} tasks.`);
 
             // 1. Update global state
-            await sql`UPDATE tracker_state SET conducted_count = ${conductedCount || 0} WHERE id = 1;`;
+            await sql`INSERT INTO tracker_state (id, conducted_count) VALUES (1, ${conductedCount || 0}) ON CONFLICT (id) DO UPDATE SET conducted_count = EXCLUDED.conducted_count;`;
 
             // 2. Sync Attendance Records
             if (!attendanceRecords || attendanceRecords.length === 0) {
@@ -52,9 +53,10 @@ export default async function handler(req, res) {
                 }
             }
 
+            console.log("Cloud sync successful.");
             res.status(200).json({ success: true, message: 'Cloud Sync Complete!' });
         } catch (error) {
-            console.error('Error saving to Cloud:', error);
+            console.error('CRITICAL Error saving to Cloud:', error);
             res.status(500).json({ error: 'Postgres Write Error', message: error.message });
         }
     } else {
