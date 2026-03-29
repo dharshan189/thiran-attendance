@@ -2,13 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".",
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/load", "destination": "/api/load.js" },
+    { "source": "/api/save", "destination": "/api/save.js" },
+    { "source": "/api/init-db", "destination": "/api/init-db.js" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
