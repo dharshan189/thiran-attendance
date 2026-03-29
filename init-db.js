@@ -1,7 +1,16 @@
 import { sql } from '@vercel/postgres';
 
 export default async function handler(req, res) {
+    // Check for environment variable
+    if (!process.env.POSTGRES_URL) {
+        return res.status(500).json({ 
+            error: 'Missing POSTGRES_URL environment variable.', 
+            hint: 'Ensure you have connected a Vercel Postgres database to this project.' 
+        });
+    }
+
     try {
+        console.log('Initializing Database Schema...');
         // 1. Create table for the global application state
         await sql`
             CREATE TABLE IF NOT EXISTS tracker_state (
@@ -28,7 +37,7 @@ export default async function handler(req, res) {
             );
         `;
 
-        // 4. Create table for tasks
+        // 3. Create table for tasks
         await sql`
             CREATE TABLE IF NOT EXISTS tasks (
                 id BIGINT PRIMARY KEY,
@@ -44,7 +53,7 @@ export default async function handler(req, res) {
             );
         `;
 
-        // 5. Create table for users
+        // 4. Create table for users (Optional for current frontend but useful for future)
         await sql`
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
@@ -54,29 +63,32 @@ export default async function handler(req, res) {
             );
         `;
 
-        // 6. Seed the users table
-        await sql`
-            INSERT INTO users (username, full_name, password, role) VALUES 
-            ('thiran', 'Thiran MD', 'admin@thiran', 'admin'),
-            ('mogesh', 'Mogesh', 'thiran*2026', 'employee'),
-            ('hari', 'Hari Haran', 'thiran*2026', 'employee'),
-            ('mukunthan', 'Mukunthan', 'thiran*2026', 'employee'),
-            ('prakathesh', 'Prakathesh', 'thiran*2026', 'employee'),
-            ('rahav', 'Rahav V K', 'thiran*2026', 'employee'),
-            ('lohith', 'Lohidharani G S', 'thiran*2026', 'employee'),
-            ('nabeela', 'Shaik Nabeela Rayees', 'thiran*2026', 'employee'),
-            ('keerthana', 'Keerthana P S', 'thiran*2026', 'employee'),
-            ('kanmani', 'Kanmani G', 'thiran*2026', 'employee'),
-            ('navasri', 'Navasri N', 'thiran*2026', 'employee'),
-            ('akash', 'Akash M', 'thiran*2026', 'employee'),
-            ('arpit', 'Arpit kumar P', 'thiran*2026', 'employee'),
-            ('supriya', 'Supriya Jayam.B', 'thiran*2026', 'employee'),
-            ('vishal', 'Vishal M', 'thiran*2026', 'employee'),
-            ('nisha', 'Nisha', 'thiran*2026', 'employee'),
-            ('sam', 'Sam', 'thiran*2026', 'employee')
-            ON CONFLICT (username) DO NOTHING;
-        `;
+        // Seed default users if table is empty
+        const userCheck = await sql`SELECT COUNT(*) FROM users;`;
+        if (parseInt(userCheck.rows[0].count) === 0) {
+            await sql`
+                INSERT INTO users (username, full_name, password, role) VALUES 
+                ('thiran', 'Thiran MD', 'admin@thiran', 'admin'),
+                ('mogesh', 'Mogesh', 'thiran*2026', 'employee'),
+                ('hari', 'Hari Haran', 'thiran*2026', 'employee'),
+                ('mukunthan', 'Mukunthan', 'thiran*2026', 'employee'),
+                ('prakathesh', 'Prakathesh', 'thiran*2026', 'employee'),
+                ('rahav', 'Rahav V K', 'thiran*2026', 'employee'),
+                ('lohith', 'Lohidharani G S', 'thiran*2026', 'employee'),
+                ('nabeela', 'Shaik Nabeela Rayees', 'thiran*2026', 'employee'),
+                ('keerthana', 'Keerthana P S', 'thiran*2026', 'employee'),
+                ('kanmani', 'Kanmani G', 'thiran*2026', 'employee'),
+                ('navasri', 'Navasri N', 'thiran*2026', 'employee'),
+                ('akash', 'Akash M', 'thiran*2026', 'employee'),
+                ('arpit', 'Arpit kumar P', 'thiran*2026', 'employee'),
+                ('supriya', 'Supriya Jayam.B', 'thiran*2026', 'employee'),
+                ('vishal', 'Vishal M', 'thiran*2026', 'employee'),
+                ('nisha', 'Nisha', 'thiran*2026', 'employee'),
+                ('sam', 'Sam', 'thiran*2026', 'employee');
+            `;
+        }
 
+        console.log('Database Initialization Complete.');
         return res.status(200).json({ success: true, message: 'Database Ready for 100% Shared Attendance & Tasks!' });
     } catch (error) {
         console.error('Error initializing database:', error);
