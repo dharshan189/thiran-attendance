@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thiran Smart Hub</title>
+  <link rel="stylesheet" href="index.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Toastify Notifications -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <!-- LOGIN VIEW -->
+    <div id="login-view" class="view"
+      style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 2rem;">
+      <div class="glass-card fade-in"
+        style="max-width: 900px; width: 100%; display: flex; flex-wrap: wrap; overflow: hidden; border-radius: 2rem;">
+
+        <!-- Left Side: Description Panel -->
+        <div class="login-info-panel"
+          style="flex: 1; min-width: 350px; padding: 3rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.1)); border-right: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: center;">
+          <div
+            style="background: white; width: 70px; height: 70px; border-radius: 1.25rem; display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+            <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h2
+            style="font-size: 2.25rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+            Thiran Digital Attendance</h2>
+          <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 2.5rem; font-size: 1.05rem;">
+            A high-performance, real-time attendance matrix designed for modern teams.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div
+                style="background: rgba(99, 102, 241, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--primary);">
+                <i data-lucide="shield-check" size="20"></i>
+              </div>
+              <div>
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Secure Verification</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Cryptographic session tracking ensures 100%
+                  accurate records.</p>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div
+                style="background: rgba(34, 211, 238, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--secondary);">
+                <i data-lucide="zap" size="20"></i>
+              </div>
+              <div>
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Real-time Matrix</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Instant global sync across all administrator
+                  and employee dashboards.</p>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div
+                style="background: rgba(244, 114, 182, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--accent);">
+                <i data-lucide="bar-chart-3" size="20"></i>
+              </div>
+              <div>
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Automated Analytics</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Generate comprehensive attendance reports with
+                  one click.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <div
+          style="flex: 1; min-width: 350px; padding: 3rem; display: flex; flex-direction: column; justify-content: center;">
+          <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700;">Welcome back</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2.5rem;">Please enter your credentials
+            to access the Portal</p>
+
+          <form id="login-form" style="text-align: left;">
+            <div style="margin-bottom: 1.25rem;">
+              <label
+                style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Username</label>
+              <div style="position: relative;">
+                <i data-lucide="users" size="16"
+                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="username" class="input-field" placeholder="Enter your Username"
+                  style="padding-left: 2.75rem; font-size: 0.9rem;" required>
+              </div>
+            </div>
+            <div style="margin-bottom: 2rem;">
+              <label
+                style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Password</label>
+              <div style="position: relative;">
+                <i data-lucide="lock" size="16"
+                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="password" id="password" class="input-field" placeholder="Enter your Password"
+                  style="padding-left: 2.75rem; padding-right: 3rem; font-size: 0.9rem;" required>
+                <button type="button" id="toggle-password"
+                  style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="eye" size="16"></i>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary"
+              style="width: 100%; justify-content: center; height: 3.25rem; font-size: 1rem;">
+              <i data-lucide="log-in" size="18" style="margin-right: 0.5rem;"></i> Access Workspace
+            </button>
+          </form>
+          <p style="margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">By accessing,
+            you agree to Thiran's internal security protocols.</p>
+          <footer
+            style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); text-align: center;">
+            <p
+              style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;">
+              &copy; 2026 Design and Developed by <span style="color: var(--secondary); font-weight: 700;">Thiran</span>
+            </p>
+          </footer>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="admin-view" class="view" style="display: none; padding: 2rem; max-width: 1400px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3.5rem; gap: 2.5rem;">
+        <div style="display: flex; align-items: center; gap: 2rem;">
+          <div
+            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h1 style="font-size: 1.85rem; font-weight: 700;">Attendance Matrix</h1>
+        </div>
+        <div style="display: flex; gap: 1.75rem; align-items: center;">
+          <div class="clock-widget" style="margin-right: 1.25rem;">
+            <i data-lucide="clock" size="18" style="color: var(--text-muted);"></i>
+            <span id="admin-clock" class="clock-time">00:00:00</span>
+          </div>
+          <button onclick="showView('score-list-view')" class="btn-primary"
+            style="background: rgba(34, 211, 238, 0.1); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.2); box-shadow: none;">
+            <i data-lucide="award" size="18"></i>Attendance Performance
+          </button>
+          <button onclick="showView('admin-tasks-view')" class="btn-primary"
+            style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
+            <i data-lucide="clipboard-list" size="18"></i> Task Management
+          </button>
+          <button onclick="resetMatrix()" class="btn-outline"
+            style="border-color: #ef4444; color: #ef4444; font-weight: 600;">
+            <i data-lucide="trash-2" size="18"></i> Reset Data
+          </button>
+          <button onclick="downloadSheet()" class="btn-primary" style="padding: 0.65rem 1.25rem;">
+            <i data-lucide="file-spreadsheet" size="18"></i> Export Spreadsheet
+          </button>
+          <button onclick="logout()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600;">
+            <i data-lucide="log-out" size="18"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+
+
+      <!-- Admin Summary Statistics -->
+      <div class="glass-card fade-in" id="admin-summary"
+        style="padding: 2rem; margin-bottom: 3.5rem; display: flex; flex-wrap: wrap; gap: 2rem;">
+        <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
+          <div style="background: rgba(250, 204, 21, 0.1); padding: 1rem; border-radius: 1rem;">
+            <i data-lucide="users" color="var(--primary)" size="28"></i>
+          </div>
+          <div>
+            <p
+              style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">
+              Total Employees</p>
+            <h3 id="stat-total-emp" style="font-size: 1.5rem; font-weight: 800; color: var(--secondary);">0</h3>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
+          <div style="background: rgba(34, 211, 238, 0.1); padding: 1rem; border-radius: 1rem;">
+            <i data-lucide="bar-chart-3" color="#22d3ee" size="28"></i>
+          </div>
+          <div>
+            <p
+              style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">
+              Average Attendance</p>
+            <h3 id="stat-avg-pct" style="font-size: 1.5rem; font-weight: 800; color: var(--secondary);">100%</h3>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
+          <div style="background: rgba(248, 113, 113, 0.1); padding: 1rem; border-radius: 1rem;">
+            <i data-lucide="alert-triangle" color="#f87171" size="28"></i>
+          </div>
+          <div>
+            <p
+              style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">
+              Critically Low (&lt;60%)</p>
+            <h3 id="stat-critical" style="font-size: 1.5rem; font-weight: 800; color: #f87171;">0</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual Attendance Panel -->
+      <div class="glass-card fade-in" id="manual-attendance-panel"
+        style="padding:1.5rem; margin-bottom:2rem; position: relative; z-index: 100;">
+        <h4 style="margin-bottom:1rem; font-size:1.1rem; font-weight:600;">Manual Attendance</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
+          <input type="number" id="manual-meet-index" class="input-field" placeholder="Meeting #" min="1" max="50"
+            style="width:100px;">
+          <button id="mark-present-btn" class="btn-primary">Mark Present</button>
+          <button id="mark-absent-btn" class="btn-outline">Mark Absent</button>
+          <div style="position: relative; margin-left: auto;">
+            <button id="emp-dropdown-btn" class="input-field"
+              style="min-width:250px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+              <span id="selected-count">Select Employees</span>
+              <i data-lucide="chevron-down" size="16"></i>
+            </button>
+            <div id="emp-dropdown"
+              style="position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.5rem; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+              <!-- Checkboxes will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matrix Table -->
+      <div class="table-container fade-in">
+        <table id="admin-table">
+          <thead>
+            <tr id="table-headers"></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- BOOSTER LEADERBOARD (ADMIN VIEW) -->
+      <div style="margin-top: 3.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+          <i data-lucide="zap" style="color: #fbbf24; fill: #fbbf24;" size="28"></i>
+          <h3 style="font-size: 1.6rem; font-weight: 700;">Booster Leaderboard</h3>
+        </div>
+        <div class="glass-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(251, 191, 36, 0.2);">
+          <div id="admin-booster-list"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--card-border);">
+            <!-- Leaderboard items injected here -->
+          </div>
+        </div>
+      </div>
+
+      <footer
+        style="margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--card-border); text-align: center;">
+        <p
+          style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;">
+          &copy; 2026 Design and Developed by <span style="color: var(--primary); font-weight: 700;">Thiran</span></p>
+      </footer>
+    </div>
+
+    <!-- ADMIN TASKS VIEW -->
+    <div id="admin-tasks-view" class="view" style="display: none; padding: 2rem; max-width: 1200px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <div
+            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h1 style="font-size: 1.85rem; font-weight: 700;">Task Management</h1>
+        </div>
+        <button onclick="showView('admin-view')" class="btn-outline">
+          <i data-lucide="chevron-left" size="18"></i> Back to Matrix
+        </button>
+      </header>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+        <div class="glass-card fade-in" style="padding: 2.5rem;">
+          <h3 style="margin-bottom: 1.5rem; font-size: 1.35rem; font-weight: 600;">Assign New Task</h3>
+          <form id="assign-task-form">
+            <div style="margin-bottom: 1.25rem;">
+              <label>Select Employee</label>
+              <select id="task-user-select" class="input-field" required></select>
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+              <label>Target Week</label>
+              <select id="task-week-select" class="input-field" required>
+                <!-- Weeks 1-100 will be injected via JS -->
+              </select>
+            </div>
+            <div style="margin-bottom: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label>From Date</label>
+                <input type="date" id="task-from-date" class="input-field" required>
+              </div>
+              <div>
+                <label>Till Date</label>
+                <input type="date" id="task-till-date" class="input-field" required>
+              </div>
+            </div>
+            <div style="margin-bottom: 2rem;">
+              <label>Task Description</label>
+              <textarea id="task-text" class="input-field" style="height: 120px; resize: none;"
+                placeholder="Enter task details..." required></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+              <i data-lucide="plus" size="18"></i> Assign Task
+            </button>
+          </form>
+        </div>
+        <div class="glass-card fade-in" style="padding: 2.5rem;">
+          <h3 style="margin-bottom: 1.5rem; font-size: 1.35rem; font-weight: 600;">Submissions & Proofs</h3>
+          <div id="admin-task-list" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCORE LIST VIEW -->
+    <div id="score-list-view" class="view" style="display: none; padding: 2rem; max-width: 1000px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <div
+            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h1 style="font-size: 1.85rem; font-weight: 700;">Performance Rankings</h1>
+        </div>
+        <button onclick="showView('admin-view')" class="btn-outline">
+          <i data-lucide="chevron-left" size="18"></i> Back to Matrix
+        </button>
+      </header>
+
+      <div class="glass-card fade-in" style="padding: 2.5rem; margin-bottom: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+          <h3 style="font-size: 1.35rem; font-weight: 600;">Employee Scoreboard</h3>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Deduction Logic: -6% per absence</span>
+        </div>
+        <div id="performance-list-container" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Items will be injected here -->
+        </div>
+      </div>
+
+      <footer
+        style="margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--card-border); text-align: center;">
+        <p
+          style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;">
+          &copy; 2026 Design and Developed by <span style="color: var(--primary); font-weight: 700;">Thiran</span></p>
+      </footer>
+    </div>
+
+    <!-- EMPLOYEE VIEW -->
+    <div id="employee-view" class="view" style="display: none; padding: 2rem; max-width: 1100px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; gap: 2.5rem;">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <div
+            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h1 id="welcome-text" style="font-size: 1.85rem; font-weight: 700;">Hello, User</h1>
+          <div class="glass-card"
+            style="padding: 0.5rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; border-radius: 2rem;">
+            <span
+              style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Attendance
+              Score:</span>
+            <span id="user-pct-badge" style="font-weight: 800; color: var(--primary); font-size: 1.1rem;">100%</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 1.75rem; align-items: center;">
+          <div class="clock-widget" style="margin-right: 1.25rem;">
+            <i data-lucide="clock" size="18" style="color: var(--text-muted);"></i>
+            <span id="user-clock" class="clock-time">00:00:00</span>
+          </div>
+          <button onclick="showView('employee-tasks-view')" class="btn-primary"
+            style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
+            <i data-lucide="list-checks" size="18"></i> My Tasks
+          </button>
+          <button onclick="logout()" class="btn-outline">
+            <i data-lucide="log-out" size="18"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+      <!-- Attendance History Table -->
+      <div style="margin-top: 3.5rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 600; margin-bottom: 1.5rem;">Attendance History</h3>
+        <div class="table-container fade-in">
+          <table id="user-history-table">
+            <thead>
+              <tr id="user-table-headers"></tr>
+            </thead>
+            <tbody id="user-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Attendance Progress Strip (Quick View) -->
+      <div style="margin-top: 3.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem;">
+          <h3 style="font-size: 1.35rem; font-weight: 600;">Status Strip</h3>
+        </div>
+        <div id="progress-strip" class="progress-container"></div>
+      </div>
+
+      <!-- BOOSTER TABLE -->
+      <div style="margin-top: 4rem;">
+        <div class="glass-card fade-in"
+          style="padding: 2rem; background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 1.5rem; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 0 0.5rem;">
+            <div
+              style="display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(45deg, #fbbf24, #f59e0b); border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+              <i data-lucide="rocket" style="color: white;" size="24"></i>
+            </div>
+            <div>
+              <h2 style="font-size: 1.5rem; font-weight: 800; color: white; margin: 0; line-height: 1;">Booster Points
+                Table</h2>
+              <span
+                style="font-size: 0.75rem; color: #fbbf24; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em;">Season
+                2026</span>
+            </div>
+          </div>
+          <div id="user-booster-list" style="overflow-x: auto;">
+            <!-- Ranked employees injected here -->
+          </div>
+        </div>
+      </div>
+
+      <footer
+        style="margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--card-border); text-align: center;">
+        <p
+          style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;">
+          &copy; 2026 Design and Developed by <span style="color: var(--primary); font-weight: 700;">Thiran</span></p>
+      </footer>
+    </div>
+
+    <!-- EMPLOYEE TASKS VIEW -->
+    <div id="employee-tasks-view" class="view" style="display: none; padding: 2rem; max-width: 1000px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <div
+            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <h1 style="font-size: 1.85rem; font-weight: 700;">My Assignments</h1>
+        </div>
+        <button onclick="showView('employee-view')" class="btn-outline">
+          <i data-lucide="chevron-left" size="18"></i> Back to Dashboard
+        </button>
+      </header>
+      <div class="glass-card fade-in" style="padding: 2.5rem; margin-bottom: 3rem;">
+        <div id="user-task-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- User tasks will appear here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PROOF MODAL -->
+    <div id="proof-modal" onclick="closeProof()"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:9999; padding:3rem; cursor:zoom-out; align-items:center; justify-content:center;">
+      <div
+        style="position:absolute; top:1.5rem; right:2rem; color:white; font-size:2rem; font-weight:100; cursor:pointer;"
+        onclick="closeProof()">&times;</div>
+      <div
+        style="background:var(--card-bg); padding:1rem; border-radius:1rem; border:1px solid var(--card-border); width:95vw; height:92vh; display:flex; flex-direction:column; position:relative; cursor:default;"
+        onclick="event.stopPropagation()">
+        <div id="modal-content-area"
+          style="flex:1; overflow:auto; display:flex; justify-content:center; align-items:flex-start; padding:1rem;">
+          <!-- Content injected here -->
+        </div>
+        <div
+          style="margin-top:auto; display:flex; justify-content:space-between; align-items:center; padding:1.5rem 1.5rem; border-top:1px solid var(--card-border); background:rgba(255,255,255,0.02); border-radius:0 0 1rem 1rem;">
+          <span id="modal-filename" style="font-size:0.9rem; font-weight:600; color:var(--text-muted)"></span>
+          <a id="modal-download" href="#" download="" class="btn-primary"
+            style="padding:0.5rem 1.25rem; font-size:0.85rem;">
+            <i data-lucide="download" size="16"></i> Save to Device
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MAIN SCRIPT -->
+  <script src="script.js"></script>
+</body>
+
+</html>
