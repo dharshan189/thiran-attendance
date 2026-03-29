@@ -10,15 +10,22 @@ let selectedEmployees = new Set();
 let isSyncing = false;
 
 // Load data from PostgreSQL (Cloud Sync)
+// Load data from PostgreSQL (Cloud Sync)
 async function loadData() {
     if (isSyncing) return;
     try {
+        isSyncing = true;
         const response = await fetch('/api/load');
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const data = await response.json();
         if (data) {
             attendanceRecordsArray = data.attendanceRecords || [];
             conductedCount = data.conductedCount || 0;
             tasksArray = data.tasksArray || [];
+            // Cache locally for offline/re-entry
+            localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecordsArray));
+            localStorage.setItem('conductedCount', conductedCount.toString());
+            localStorage.setItem('tasksArray', JSON.stringify(tasksArray));
         }
     } catch (error) {
         console.error('Cloud load failed, falling back to local storage', error);
@@ -29,6 +36,8 @@ async function loadData() {
         if (localCount) conductedCount = parseInt(localCount, 10);
         const localTasks = localStorage.getItem('tasksArray');
         if (localTasks) tasksArray = JSON.parse(localTasks);
+    } finally {
+        isSyncing = false;
     }
 }
 
@@ -59,14 +68,25 @@ async function saveData() {
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadData(); // Load persisted data and attempt to sync from server
     updateClock();
     setInterval(updateClock, 1000);
+    
+    // Initial data fetch
+    await loadData();
+    refreshUI(false);
 
-    // Refresh UI frequently
+    // Frequent UI Refresh for clock/animations
     setInterval(() => {
-        refreshUI();
-    }, 2500);
+        refreshUI(false); // Don't reload data every time
+    }, 2000);
+
+    // Heartbeat Sync from Cloud
+    setInterval(async () => {
+        if (currentUser) {
+            await loadData();
+            refreshUI(false);
+        }
+    }, 15000);
 
     lucide.createIcons();
 
@@ -155,8 +175,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-function refreshUI() {
-    loadData(); // Ensure memory is synced with localStorage
+function refreshUI(shouldReload = false) {
+    if (shouldReload) loadData(); 
     if (currentUser) {
         if (currentUser.role === 'admin') {
             if (document.getElementById('admin-view')) renderAdmin();
@@ -511,12 +531,7 @@ function manualAttendance(empName, meetNum, present) {
     }
 
     notify(`Manual attendance ${present ? 'added' : 'cleared'} for ${empName} (Meet ${meetNum})`, present ? 'green' : 'red');
-    // redraw admin view to reflect new state; conductedCount may still be lower
-    // than the marked meeting and that's okay because we only want to show the
-    // record itself, not force absences elsewhere.
     saveData(); // Persist the attendance change
-    renderAdmin();
-    return;
     renderAdmin();
 }
 
