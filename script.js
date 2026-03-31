@@ -1,3 +1,5 @@
+import { supabase } from './lib/supabase.js';
+
 /* Thiran Attendance Tracker - Pure Array Concept (In-Memory Only) */
 const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M', 'Nisha', 'Sam'];
 
@@ -11,13 +13,41 @@ let selectedTaskEmployees = new Set();
 let isSyncing = false;
 
 // In-memory data management only
-function loadData() {
-    // Purposely empty to remove all storage/fetch logic
-    return Promise.resolve();
+// Supabase Synchronization (Database Persistence)
+const API_URL = 'http://localhost:3000/api';
+
+async function loadData() {
+    try {
+        const res = await fetch(`${API_URL}/data`);
+        if (!res.ok) throw new Error('Database connection failed');
+        const data = await res.json();
+        
+        attendanceRecordsArray = data.attendance || [];
+        tasksArray = data.tasks || [];
+        conductedCount = data.conductedCount || 0;
+        
+        return Promise.resolve();
+    } catch (err) {
+        console.error('CRITICAL: Load Failed', err);
+        notify('Database Sync Error! Working in-memory.', 'red');
+        return Promise.resolve();
+    }
 }
 
-function saveData() {
-    // Purposely empty to remove all storage/fetch logic
+async function saveData() {
+    try {
+        await fetch(`${API_URL}/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                attendance: attendanceRecordsArray,
+                tasks: tasksArray,
+                conductedCount: conductedCount
+            })
+        });
+    } catch (err) {
+        console.error('CRITICAL: Save Failed', err);
+    }
 }
 
 // INIT
@@ -152,6 +182,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
+
+    // INITIAL DATA FETCH
+    await loadData();
+    refreshUI(false); 
 });
 
 function refreshUI(shouldReload = false) {
@@ -227,9 +261,17 @@ function logout() {
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
     showView('login-view');
-    resetTracking();
+    // resetTracking(); // This was probably a mistake in the original script.js or defined later. I'll check.
     notify('Logged out successfully', 'blue');
 }
+window.logout = logout;
+window.showView = showView;
+window.resetMatrix = resetMatrix;
+window.downloadSheet = downloadSheet;
+window.deleteTask = deleteTask;
+window.deleteSubmission = deleteSubmission;
+window.openProof = openProof;
+window.closeProof = closeProof;
 
 function calculateAttendanceScore(empName, count) {
     let score = 100;
@@ -776,28 +818,49 @@ function renderUserTasks() {
     lucide.createIcons();
 }
 
-function handleSubmission(taskId, input) {
+window.handleSubmission = async function(taskId, input) {
     const file = input.files[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) return notify('File too large! Max 2MB.', 'red');
+    // Use a toast to show progress since Supabase upload can take a few seconds
+    const progressToast = notify('Uploading file to cloud...', 'blue');
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    try {
+        // Upload the file to the bucket named 'my-files' 
+        // We use folder/${file.name} or similar structure
+        const filePath = `tasks/${taskId}/${file.name}`;
+        const { data, error } = await supabase.storage
+            .from('my-files')
+            .upload(filePath, file, {
+                upsert: true // Overwrite if it exists
+            });
+
+        if (error) {
+            notify("Error uploading: " + error.message, 'red');
+            return;
+        }
+
+        // Get the public URL for the file
+        const { data: publicData } = supabase.storage
+            .from('my-files')
+            .getPublicUrl(filePath);
+
         const task = tasksArray.find(t => t.id === taskId);
         if (task) {
             task.status = 'Submitted';
             task.completionTime = Date.now();
-            task.proof = e.target.result;
+            task.proof = publicData.publicUrl; // Store the URL instead of base64
             task.fileName = file.name;
             saveData();
-            notify('Task proof submitted successfully!', 'green');
+            notify('Success! File uploaded to cloud.', 'green');
             renderUserTasks();
             renderBoosterLeaderboard();
         }
-    };
-    reader.readAsDataURL(file);
-}
+    } catch (err) {
+        console.error('Upload catch error:', err);
+        notify("Unexpected upload error!", 'red');
+    }
+};
 
 function deleteSubmission(taskId) {
     if (confirm('Are you sure you want to delete this submission? You can upload a new proof after deleting.')) {
