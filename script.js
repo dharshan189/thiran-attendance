@@ -6,64 +6,18 @@ let attendanceRecordsArray = []; // Primary Storage: Array Concept
 let conductedCount = 0;
 let tasksArray = []; // Task Management Storage
 let selectedEmployees = new Set();
+let selectedTaskEmployees = new Set();
 
 let isSyncing = false;
 
-// Load data from PostgreSQL (Cloud Sync)
-// Load data from PostgreSQL (Cloud Sync)
-async function loadData() {
-    if (isSyncing) return;
-    try {
-        isSyncing = true;
-        const response = await fetch('/api/load');
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        const data = await response.json();
-        if (data) {
-            attendanceRecordsArray = data.attendanceRecords || [];
-            conductedCount = data.conductedCount || 0;
-            tasksArray = data.tasksArray || [];
-            // Cache locally for offline/re-entry
-            localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecordsArray));
-            localStorage.setItem('conductedCount', conductedCount.toString());
-            localStorage.setItem('tasksArray', JSON.stringify(tasksArray));
-        }
-    } catch (error) {
-        console.error('Cloud load failed, falling back to local storage', error);
-        // Fallback to local
-        const localRec = localStorage.getItem('attendanceRecords');
-        if (localRec) attendanceRecordsArray = JSON.parse(localRec);
-        const localCount = localStorage.getItem('conductedCount');
-        if (localCount) conductedCount = parseInt(localCount, 10);
-        const localTasks = localStorage.getItem('tasksArray');
-        if (localTasks) tasksArray = JSON.parse(localTasks);
-    } finally {
-        isSyncing = false;
-    }
+// In-memory data management only
+function loadData() {
+    // Purposely empty to remove all storage/fetch logic
+    return Promise.resolve();
 }
 
-// Save data to PostgreSQL (Cloud Sync)
-async function saveData() {
-    // Also update local for immediate feedback/offline support
-    localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecordsArray));
-    localStorage.setItem('conductedCount', conductedCount.toString());
-    localStorage.setItem('tasksArray', JSON.stringify(tasksArray));
-
-    try {
-        isSyncing = true;
-        await fetch('/api/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                attendanceRecords: attendanceRecordsArray,
-                conductedCount: conductedCount,
-                tasksArray: tasksArray
-            })
-        });
-    } catch (error) {
-        console.error('Cloud sync failed:', error);
-    } finally {
-        isSyncing = false;
-    }
+function saveData() {
+    // Purposely empty to remove all storage/fetch logic
 }
 
 // INIT
@@ -71,22 +25,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     setInterval(updateClock, 1000);
     
-    // Initial data fetch
-    await loadData();
+    // Initial data setup
     refreshUI(false);
 
     // Frequent UI Refresh for clock/animations
     setInterval(() => {
-        refreshUI(false); // Don't reload data every time
+        refreshUI(false); 
     }, 2000);
-
-    // Heartbeat Sync from Cloud
-    setInterval(async () => {
-        if (currentUser) {
-            await loadData();
-            refreshUI(false);
-        }
-    }, 15000);
 
     lucide.createIcons();
 
@@ -136,29 +81,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (taskForm) {
         taskForm.onsubmit = (e) => {
             e.preventDefault();
-            const user = document.getElementById('task-user-select').value;
+            if (selectedTaskEmployees.size === 0) return notify('Select at least one employee', 'red');
+            
             const week = document.getElementById('task-week-select').value;
             const fromDate = document.getElementById('task-from-date').value;
             const tillDate = document.getElementById('task-till-date').value;
             const text = document.getElementById('task-text').value;
+            const pdfFile = document.getElementById('task-assignment-pdf').files[0];
 
-            tasksArray.push({
-                id: Date.now(),
-                user,
-                week,
-                fromDate,
-                tillDate,
-                text,
-                status: 'Pending',
-                proof: null,
-                fileName: null,
-                timestamp: new Date().toLocaleString()
-            });
+            const addTasks = (pdfData = null, pdfName = null) => {
+                const employees = Array.from(selectedTaskEmployees);
+                employees.forEach(user => {
+                  tasksArray.push({
+                      id: Date.now() + Math.random(),
+                      user,
+                      week,
+                      fromDate,
+                      tillDate,
+                      text,
+                      assignmentPdf: pdfData,
+                      assignmentPdfName: pdfName,
+                      status: 'Pending',
+                      proof: null,
+                      fileName: null,
+                      timestamp: new Date().toLocaleString()
+                  });
+                });
+                saveData();
+                notify(`Task assigned to ${employees.length} employees`, 'green');
+                taskForm.reset();
+                selectedTaskEmployees.clear();
+                updateTaskSelectedCount();
+                renderAdminTasks();
+                lucide.createIcons();
+            };
 
-            saveData();
-            notify(`Task assigned to ${user}`, 'green');
-            taskForm.reset();
-            renderAdminTasks();
+            if (pdfFile) {
+                if (pdfFile.size > 5 * 1024 * 1024) return notify('Assignment PDF too large! Max 5MB.', 'red');
+                const reader = new FileReader();
+                reader.onload = (re) => addTasks(re.target.result, pdfFile.name);
+                reader.readAsDataURL(pdfFile);
+            } else {
+                addTasks();
+            }
         };
     }
 
@@ -172,6 +137,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const manualMeetIndex = document.getElementById('manual-meet-index');
     if (manualMeetIndex) {
         manualMeetIndex.innerHTML = Array.from({ length: 100 }, (_, i) => `<option value="${i + 1}">Meeting ${i + 1}</option>`).join('');
+    }
+
+    // Task Employee Dropdown
+    const taskDropdownBtn = document.getElementById('task-emp-dropdown-btn');
+    const taskDropdown = document.getElementById('task-emp-dropdown');
+    if (taskDropdownBtn && taskDropdown) {
+      taskDropdownBtn.onclick = () => {
+        taskDropdown.style.display = taskDropdown.style.display === 'none' ? 'block' : 'none';
+      };
+      document.addEventListener('click', (e) => {
+        if (!taskDropdownBtn.contains(e.target) && !taskDropdown.contains(e.target)) {
+          taskDropdown.style.display = 'none';
+        }
+      });
     }
 });
 
@@ -511,6 +490,88 @@ function updateSelectedCount() {
     }
 }
 
+function populateTaskEmployeeDropdown() {
+    const container = document.getElementById('task-emp-dropdown');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // "Select All" option
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.style.display = 'flex';
+    selectAllLabel.style.alignItems = 'center';
+    selectAllLabel.style.gap = '0.75rem';
+    selectAllLabel.style.padding = '0.75rem 1rem';
+    selectAllLabel.style.borderBottom = '1px solid var(--card-border)';
+    selectAllLabel.style.marginBottom = '0.5rem';
+    selectAllLabel.style.cursor = 'pointer';
+    selectAllLabel.style.fontWeight = '700';
+    selectAllLabel.style.color = 'var(--primary)';
+    selectAllLabel.style.textTransform = 'none';
+
+    const selectAllCb = document.createElement('input');
+    selectAllCb.type = 'checkbox';
+    selectAllCb.style.accentColor = 'var(--primary)';
+    selectAllCb.checked = EMPLOYEES_LIST.every(emp => selectedTaskEmployees.has(emp));
+    selectAllCb.onchange = () => {
+        if (selectAllCb.checked) {
+            EMPLOYEES_LIST.forEach(emp => selectedTaskEmployees.add(emp));
+        } else {
+            selectedTaskEmployees.clear();
+        }
+        populateTaskEmployeeDropdown(); 
+        updateTaskSelectedCount();
+    };
+
+    selectAllLabel.appendChild(selectAllCb);
+    selectAllLabel.appendChild(document.createTextNode('Select All Employees'));
+    selectAllLabel.onclick = (e) => e.stopPropagation();
+    container.appendChild(selectAllLabel);
+
+    EMPLOYEES_LIST.forEach(emp => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '0.75rem';
+        label.style.fontSize = '0.9rem';
+        label.style.cursor = 'pointer';
+        label.style.padding = '0.75rem 1rem';
+        label.style.borderRadius = '0.5rem';
+        label.style.textTransform = 'none';
+        label.style.color = 'var(--text-main)';
+        label.style.fontWeight = '400';
+
+        label.onmouseover = () => label.style.background = 'rgba(255,255,255,0.05)';
+        label.onmouseout = () => label.style.background = 'transparent';
+        label.onclick = (e) => e.stopPropagation();
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = emp;
+        cb.style.accentColor = 'var(--primary)';
+        cb.checked = selectedTaskEmployees.has(emp);
+        cb.onchange = () => {
+            if (cb.checked) {
+                selectedTaskEmployees.add(emp);
+            } else {
+                selectedTaskEmployees.delete(emp);
+            }
+            updateTaskSelectedCount();
+        };
+
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(emp));
+        container.appendChild(label);
+    });
+    updateTaskSelectedCount();
+}
+
+function updateTaskSelectedCount() {
+    const span = document.getElementById('task-selected-count');
+    if (span) {
+        span.textContent = selectedTaskEmployees.size > 0 ? `${selectedTaskEmployees.size} selected` : 'Select Employees';
+    }
+}
+
 /**
  * Mark or clear attendance manually for a specific employee/meeting.
  * @param {string} empName
@@ -591,11 +652,8 @@ document.getElementById('toggle-password').onclick = function () {
 
 // TASK MANAGEMENT LOGIC
 function renderAdminTasks() {
-    const selector = document.getElementById('task-user-select');
-    if (selector && selector.innerHTML === '') {
-        selector.innerHTML = EMPLOYEES_LIST.map(e => `<option value="${e}">${e}</option>`).join('');
-    }
-
+    populateTaskEmployeeDropdown();
+    
     const list = document.getElementById('admin-task-list');
     if (!list) return;
 
@@ -616,6 +674,13 @@ function renderAdminTasks() {
                             <i data-lucide="calendar" size="12"></i> ${task.fromDate} to ${task.tillDate}
                         </div>
                         <h4 style="font-size:1.05rem; margin-top:0.25rem;">${task.text}</h4>
+                        ${task.assignmentPdf ? `
+                        <div style="margin-top: 0.75rem;">
+                            <button onclick="openProof('${task.assignmentPdf}', '${task.assignmentPdfName}')" class="btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; height: auto;">
+                                <i data-lucide="file-text" size="14"></i> View Assignment PDF
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
                     <span class="${isSubmitted ? 'badge-present' : 'badge-absent'}">${task.status}</span>
                 </div>
@@ -655,7 +720,7 @@ function renderUserTasks() {
     const list = document.getElementById('user-task-list');
     if (!list) return;
 
-    const myTasks = tasksArray.filter(t => t.user === currentUser.name);
+    const myTasks = tasksArray; // Visible to all users
 
     if (myTasks.length === 0) {
         list.innerHTML = '<p style="text-align:center; opacity:0.3; padding:4rem;">You have no assigned tasks at the moment.</p>';
@@ -665,37 +730,46 @@ function renderUserTasks() {
     list.innerHTML = '';
     myTasks.forEach(task => {
         const isSubmitted = task.status === 'Submitted';
+        const isMine = task.user === currentUser.name;
+
         list.innerHTML += `
-            <div class="glass-card" style="padding:2rem; margin-bottom:1rem;">
+            <div class="glass-card" style="padding:2rem; margin-bottom:1rem; border-color: ${isMine ? 'var(--primary)' : 'var(--card-border)'};">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
                     <div>
                         <span style="background:rgba(99,102,241,0.1); padding:0.35rem 1rem; border-radius:2rem; font-size:0.8rem; font-weight:700; color:var(--primary);">${task.week}</span>
                         <span style="margin-left:1rem; font-size:0.8rem; font-weight:600; opacity:0.7;">
-                            <i data-lucide="calendar" size="14"></i> ${task.fromDate} — ${task.tillDate}
+                            <i data-lucide="user" size="14"></i> Assigned to: ${task.user}
                         </span>
                     </div>
-                    <span class="${isSubmitted ? 'badge-present' : 'badge-absent'}">${isSubmitted ? 'Task Completed' : 'Pending Action'}</span>
+                    <span class="${isSubmitted ? 'badge-present' : 'badge-absent'}">${isMine ? (isSubmitted ? 'Task Completed' : 'Pending Action') : ('Assignee: ' + task.user)}</span>
                 </div>
                 <h3 style="font-size:1.25rem; margin-bottom:1rem; line-height:1.4;">${task.text}</h3>
                 
-                ${!isSubmitted ? `
-                    <div style="margin-top:2rem; padding:1.5rem; border:1px dashed var(--card-border); border-radius:1rem; text-align:center;">
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem;">
+                  ${task.assignmentPdf ? `
+                    <button onclick="openProof('${task.assignmentPdf}', '${task.assignmentPdfName}')" class="btn-outline" style="flex: 1; min-width: 200px; justify-content: center;">
+                        <i data-lucide="file-down" size="18"></i> Open Assignment PDF
+                    </button>
+                  ` : ''}
+                  
+                  ${isMine && !isSubmitted ? `
+                    <div style="flex: 2; min-width: 300px;">
                         <input type="file" id="file-${task.id}" style="display:none" onchange="handleSubmission(${task.id}, this)">
-                        <button onclick="document.getElementById('file-${task.id}').click()" class="btn-outline" style="width:100%; justify-content:center;">
+                        <button onclick="document.getElementById('file-${task.id}').click()" class="btn-primary" style="width:100%; justify-content:center;">
                             <i data-lucide="upload-cloud" size="18"></i> Upload Proof (Photo/File)
                         </button>
-                        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem;">Max size: 2MB · PNG, JPG or PDF</p>
                     </div>
-                ` : `
-                    <div style="margin-top:1.5rem; display:flex; align-items:center; justify-content:space-between; padding:1.25rem; background:rgba(34, 197, 94, 0.05); border-radius:0.75rem; border:1px solid rgba(34, 197, 94, 0.15);">
-                        <div style="color:#22c55e; display:flex; align-items:center; gap:0.5rem; font-weight:600;">
-                            <i data-lucide="check-circle" size="20"></i> ${task.fileName} Received
+                  ` : (isMine && isSubmitted ? `
+                    <div style="flex: 2; min-width: 300px; display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1.25rem; background:rgba(34, 197, 94, 0.05); border-radius:1rem; border:1px solid rgba(34, 197, 94, 0.15);">
+                        <div style="color:#22c55e; display:flex; align-items:center; gap:0.5rem; font-weight:600; font-size: 0.9rem;">
+                            <i data-lucide="check-circle" size="18"></i> ${task.fileName} Received
                         </div>
-                        <button onclick="deleteSubmission(${task.id})" class="btn-outline" style="border-color:#f87171; color:#f87171; padding:0.4rem 0.75rem; font-size:0.75rem; min-width:auto;">
-                            <i data-lucide="trash-2" size="14"></i> Delete & Re-submit
+                        <button onclick="deleteSubmission(${task.id})" class="btn-outline" style="border-color:#f87171; color:#f87171; padding:0.35rem 0.65rem; font-size:0.75rem; min-width:auto;">
+                            <i data-lucide="trash-2" size="14"></i>
                         </button>
                     </div>
-                `}
+                  ` : '')}
+                </div>
             </div>
         `;
     });
