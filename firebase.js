@@ -5,13 +5,13 @@ import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstat
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDeJcMWUpi5hn4lriMAijZmHAWps1p70Bc",
-  authDomain: "thiransmarthub-9c699.firebaseapp.com",
-  projectId: "thiransmarthub-9c699",
-  storageBucket: "thiransmarthub-9c699.firebasestorage.app",
-  messagingSenderId: "150928833897",
-  appId: "1:150928833897:web:fbfbc0e8128ada090a51f8",
-  measurementId: "G-V0FH89RN6Z"
+  apiKey: "AIzaSyA3eQP96L1EmleBx8gcvKcMxYoFQsa2Qe0",
+  authDomain: "thiransmartconnect.firebaseapp.com",
+  projectId: "thiransmartconnect",
+  storageBucket: "thiransmartconnect.firebasestorage.app",
+  messagingSenderId: "851500836976",
+  appId: "1:851500836976:web:67ef9c8a50449cc5b32cb5",
+  measurementId: "G-19JEY3TE2L"
 };
 
 const app = initializeApp(firebaseConfig);
