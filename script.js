@@ -1,5 +1,8 @@
-/* Thiran Attendance Tracker - Pure Array Concept (In-Memory Only) */
+/* Thiran Attendance Tracker - Firebase Enabled */
+import { db, storage, doc, setDoc, getDoc, collection, query, getDocs, deleteDoc, ref, uploadString, getDownloadURL } from './lib/firebase.js';
+
 const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M', 'Nisha', 'Sam'];
+
 
 let currentUser = null;
 let attendanceRecordsArray = []; // Primary Storage: Array Concept
@@ -11,17 +14,44 @@ let selectedTaskEmployees = new Set();
 let isSyncing = false;
 
 // In-memory data management only
-// Supabase Synchronization (Database Persistence)
-const API_URL = 'http://localhost:3000/api';
+
 
 async function loadData() {
+    try {
+        const snap = await getDoc(doc(db, "app_state", "attendance_hub"));
+        if (snap.exists()) {
+            const data = snap.data();
+            attendanceRecordsArray = data.attendance || [];
+            tasksArray = data.tasks || [];
+            conductedCount = data.conductedCount || 0;
+            console.log("Firebase sync completed.");
+        }
+    } catch (err) {
+        console.error("Firebase Load Error:", err);
+    }
     return Promise.resolve();
 }
 
 async function saveData() {
-    // In-memory format, no backend syncing required.
-    // Data remains in arrays until page refreshes.
+    if (isSyncing) return;
+    isSyncing = true;
+    try {
+        // Sync everything to a single document for simplicity (Matrix style)
+        // If the task proofs are huge, this could exceed 1MB, so we use Firebase Storage for PDFs
+        await setDoc(doc(db, "app_state", "attendance_hub"), {
+            attendance: attendanceRecordsArray,
+            tasks: tasksArray,
+            conductedCount: conductedCount,
+            lastUpdated: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error("Firebase Save Error:", err);
+        notify("Sync Failed. Check Console.", "red");
+    } finally {
+        isSyncing = false;
+    }
 }
+
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
@@ -57,32 +87,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     const presentBtn = document.getElementById('mark-present-btn');
     const absentBtn = document.getElementById('mark-absent-btn');
     if (presentBtn) {
-        presentBtn.onclick = () => {
+        presentBtn.onclick = async () => {
             const checkboxes = document.querySelectorAll('#emp-dropdown input[type="checkbox"]:checked');
             const selectedEmps = Array.from(checkboxes).map(cb => cb.value);
             const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
-            selectedEmps.forEach(emp => manualAttendance(emp, meet, true));
+            for (const emp of selectedEmps) {
+                await manualAttendance(emp, meet, true);
+            }
             // Uncheck after marking
             selectedEmployees.clear();
             updateSelectedCount();
+            populateManualAttendance(); // Re-render dropdown to clear checks
         };
     }
     if (absentBtn) {
-        absentBtn.onclick = () => {
+        absentBtn.onclick = async () => {
             const checkboxes = document.querySelectorAll('#emp-dropdown input[type="checkbox"]:checked');
             const selectedEmps = Array.from(checkboxes).map(cb => cb.value);
             const meet = parseInt(document.getElementById('manual-meet-index').value, 10);
-            selectedEmps.forEach(emp => manualAttendance(emp, meet, false));
+            for (const emp of selectedEmps) {
+                await manualAttendance(emp, meet, false);
+            }
             // Uncheck after marking
             selectedEmployees.clear();
             updateSelectedCount();
+            populateManualAttendance(); // Re-render
         };
     }
 
     // Wire up assignment form
     const taskForm = document.getElementById('assign-task-form');
     if (taskForm) {
-        taskForm.onsubmit = (e) => {
+        taskForm.onsubmit = async (e) => {
             e.preventDefault();
             if (selectedTaskEmployees.size === 0) return notify('Select at least one employee', 'red');
 
@@ -92,9 +128,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const text = document.getElementById('task-text').value;
             const pdfFile = document.getElementById('task-assignment-pdf').files[0];
 
-            const addTasks = (pdfData = null, pdfName = null) => {
+            const addTasks = async (pdfData = null, pdfName = null) => {
                 const employees = Array.from(selectedTaskEmployees);
-                employees.forEach(user => {
+                for (const user of employees) {
                     tasksArray.push({
                         id: Date.now() + Math.random(),
                         user,
@@ -109,8 +145,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         fileName: null,
                         timestamp: new Date().toLocaleString()
                     });
-                });
-                saveData();
+                }
+                await saveData();
                 notify(`Task assigned to ${employees.length} employees`, 'green');
                 taskForm.reset();
                 selectedTaskEmployees.clear();
@@ -125,10 +161,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 reader.onload = (re) => addTasks(re.target.result, pdfFile.name);
                 reader.readAsDataURL(pdfFile);
             } else {
-                addTasks();
+                await addTasks();
             }
         };
     }
+
 
     // Populate task-week-select (1-100)
     const taskWeekSelect = document.getElementById('task-week-select');
@@ -264,6 +301,9 @@ window.deleteTask = deleteTask;
 window.deleteSubmission = deleteSubmission;
 window.openProof = openProof;
 window.closeProof = closeProof;
+window.handleSubmission = handleSubmission;
+window.manualAttendance = manualAttendance;
+
 
 function calculateAttendanceScore(empName, count) {
     let score = 100;
@@ -420,15 +460,16 @@ function renderScoreList() {
     });
 }
 
-function resetMatrix() {
+async function resetMatrix() {
     if (confirm('CRITICAL: Delete all attendance records forever?')) {
         attendanceRecordsArray = [];
         conductedCount = 0;
-        saveData(); // Persist the reset
+        await saveData(); // Persist the reset
         notify('Matrix Reset Successfully', 'red');
         renderAdmin();
     }
 }
+
 
 // Manual attendance helpers
 function populateManualAttendance() {
@@ -612,7 +653,7 @@ function updateTaskSelectedCount() {
  * @param {number} meetNum 1-based
  * @param {boolean} present if true add present record, if false remove record
  */
-function manualAttendance(empName, meetNum, present) {
+async function manualAttendance(empName, meetNum, present) {
     if (!empName) return notify('Choose an employee first', 'red');
     if (!meetNum || meetNum < 1 || meetNum > 50) return notify('Invalid meeting number', 'red');
     const index = meetNum - 1;
@@ -626,9 +667,10 @@ function manualAttendance(empName, meetNum, present) {
     }
 
     notify(`Manual attendance ${present ? 'added' : 'cleared'} for ${empName} (Meet ${meetNum})`, present ? 'green' : 'red');
-    saveData(); // Persist the attendance change
+    await saveData(); // Persist the attendance change
     renderAdmin();
 }
+
 
 function downloadSheet() {
     notify('Compiling spreadsheet...', 'blue');
@@ -741,14 +783,15 @@ function renderAdminTasks() {
     lucide.createIcons();
 }
 
-function deleteTask(id) {
+async function deleteTask(id) {
     if (confirm('Delete this task assignment?')) {
         tasksArray = tasksArray.filter(t => t.id !== id);
-        saveData();
+        await saveData();
         renderAdminTasks();
         notify('Task deleted', 'red');
     }
 }
+
 
 function renderUserTasks() {
     const list = document.getElementById('user-task-list');
@@ -810,43 +853,58 @@ function renderUserTasks() {
     lucide.createIcons();
 }
 
-window.handleSubmission = function (taskId, input) {
-        const file = input.files[0];
-        if (!file) return;
+async function handleSubmission(taskId, input) {
+    const file = input.files[0];
+    if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) return notify('File too large! Max 5MB.', 'red');
+    if (file.size > 5 * 1024 * 1024) return notify('File too large! Max 5MB.', 'red');
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
+    notify('Uploading proof to cloud...', 'blue');
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            // Upload to Firebase Storage
+            const storagePath = `proofs/${taskId}_${file.name}`;
+            const fileRef = ref(storage, storagePath);
+            await uploadString(fileRef, e.target.result, 'data_url');
+            const downloadURL = await getDownloadURL(fileRef);
+
             const task = tasksArray.find(t => t.id === taskId);
             if (task) {
                 task.status = 'Submitted';
                 task.completionTime = Date.now();
-                task.proof = e.target.result;
+                task.proof = downloadURL; // Store URL instead of heavy Base64
                 task.fileName = file.name;
-                saveData();
+                await saveData();
                 notify('Task submitted successfully!', 'green');
                 renderUserTasks();
                 renderBoosterLeaderboard();
             }
-        };
-        reader.onerror = () => notify('Error reading file!', 'red');
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error("Upload Error:", err);
+            notify("File upload failed!", "red");
+        }
     };
+    reader.onerror = () => notify('Error reading file!', 'red');
+    reader.readAsDataURL(file);
+}
 
-    function deleteSubmission(taskId) {
+
+    async function deleteSubmission(taskId) {
         if (confirm('Are you sure you want to delete this submission? You can upload a new proof after deleting.')) {
             const task = tasksArray.find(t => t.id === taskId);
             if (task) {
                 task.status = 'Pending';
                 task.proof = null;
                 task.fileName = null;
-                saveData();
+                await saveData();
                 notify('Submission deleted. You can re-submit now.', 'red');
                 renderUserTasks();
             }
         }
     }
+
 
     function openProof(data, filename) {
         const modal = document.getElementById('proof-modal');
