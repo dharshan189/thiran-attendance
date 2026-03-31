@@ -30,9 +30,9 @@
           </div>
           <h2
             style="font-size: 2.25rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
-            Thiran Digital Attendance</h2>
+            Thiran Smart Hub</h2>
           <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 2.5rem; font-size: 1.05rem;">
-            A high-performance, real-time attendance matrix designed for modern teams.
+            A high-performance, in-memory attendance matrix designed for modern teams.
           </p>
 
           <div style="display: flex; flex-direction: column; gap: 1.5rem;">
@@ -43,8 +43,7 @@
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Secure Verification</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Cryptographic session tracking ensures 100%
-                  accurate records.</p>
+
               </div>
             </div>
 
@@ -54,9 +53,8 @@
                 <i data-lucide="zap" size="20"></i>
               </div>
               <div>
-                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Real-time Matrix</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Instant global sync across all administrator
-                  and employee dashboards.</p>
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">In-Memory Matrix</h4>
+
               </div>
             </div>
 
@@ -67,8 +65,7 @@
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Automated Analytics</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Generate comprehensive attendance reports with
-                  one click.</p>
+
               </div>
             </div>
           </div>
@@ -278,8 +275,18 @@
           <h3 style="margin-bottom: 1.5rem; font-size: 1.35rem; font-weight: 600;">Assign New Task</h3>
           <form id="assign-task-form">
             <div style="margin-bottom: 1.25rem;">
-              <label>Select Employee</label>
-              <select id="task-user-select" class="input-field" required></select>
+              <label>Select Employees</label>
+              <div style="position: relative;">
+                <button type="button" id="task-emp-dropdown-btn" class="input-field"
+                  style="text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                  <span id="task-selected-count">Select Employees</span>
+                  <i data-lucide="chevron-down" size="16"></i>
+                </button>
+                <div id="task-emp-dropdown"
+                  style="position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.5rem; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                  <!-- Checkboxes will be populated here -->
+                </div>
+              </div>
             </div>
             <div style="margin-bottom: 1.25rem;">
               <label>Target Week</label>
@@ -301,6 +308,13 @@
               <label>Task Description</label>
               <textarea id="task-text" class="input-field" style="height: 120px; resize: none;"
                 placeholder="Enter task details..." required></textarea>
+            </div>
+            <div style="margin-bottom: 2rem;">
+              <label>Attach Assignment (PDF)</label>
+              <div style="position: relative;">
+                <input type="file" id="task-assignment-pdf" class="input-field" accept="application/pdf" style="padding-left: 3rem;">
+                <i data-lucide="file-text" size="18" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+              </div>
             </div>
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
               <i data-lucide="plus" size="18"></i> Assign Task
