@@ -1,5 +1,3 @@
-import { supabase } from './lib/supabase.js';
-
 /* Thiran Attendance Tracker - Pure Array Concept (In-Memory Only) */
 const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M', 'Nisha', 'Sam'];
 
@@ -17,50 +15,25 @@ let isSyncing = false;
 const API_URL = 'http://localhost:3000/api';
 
 async function loadData() {
-    try {
-        const res = await fetch(`${API_URL}/data`);
-        if (!res.ok) throw new Error('Database connection failed');
-        const data = await res.json();
-        
-        attendanceRecordsArray = data.attendance || [];
-        tasksArray = data.tasks || [];
-        conductedCount = data.conductedCount || 0;
-        
-        return Promise.resolve();
-    } catch (err) {
-        console.error('CRITICAL: Load Failed', err);
-        notify('Database Sync Error! Working in-memory.', 'red');
-        return Promise.resolve();
-    }
+    return Promise.resolve();
 }
 
 async function saveData() {
-    try {
-        await fetch(`${API_URL}/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                attendance: attendanceRecordsArray,
-                tasks: tasksArray,
-                conductedCount: conductedCount
-            })
-        });
-    } catch (err) {
-        console.error('CRITICAL: Save Failed', err);
-    }
+    // In-memory format, no backend syncing required.
+    // Data remains in arrays until page refreshes.
 }
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     setInterval(updateClock, 1000);
-    
+
     // Initial data setup
     refreshUI(false);
 
     // Frequent UI Refresh for clock/animations
     setInterval(() => {
-        refreshUI(false); 
+        refreshUI(false);
     }, 2000);
 
     lucide.createIcons();
@@ -112,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         taskForm.onsubmit = (e) => {
             e.preventDefault();
             if (selectedTaskEmployees.size === 0) return notify('Select at least one employee', 'red');
-            
+
             const week = document.getElementById('task-week-select').value;
             const fromDate = document.getElementById('task-from-date').value;
             const tillDate = document.getElementById('task-till-date').value;
@@ -122,20 +95,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const addTasks = (pdfData = null, pdfName = null) => {
                 const employees = Array.from(selectedTaskEmployees);
                 employees.forEach(user => {
-                  tasksArray.push({
-                      id: Date.now() + Math.random(),
-                      user,
-                      week,
-                      fromDate,
-                      tillDate,
-                      text,
-                      assignmentPdf: pdfData,
-                      assignmentPdfName: pdfName,
-                      status: 'Pending',
-                      proof: null,
-                      fileName: null,
-                      timestamp: new Date().toLocaleString()
-                  });
+                    tasksArray.push({
+                        id: Date.now() + Math.random(),
+                        user,
+                        week,
+                        fromDate,
+                        tillDate,
+                        text,
+                        assignmentPdf: pdfData,
+                        assignmentPdfName: pdfName,
+                        status: 'Pending',
+                        proof: null,
+                        fileName: null,
+                        timestamp: new Date().toLocaleString()
+                    });
                 });
                 saveData();
                 notify(`Task assigned to ${employees.length} employees`, 'green');
@@ -173,23 +146,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const taskDropdownBtn = document.getElementById('task-emp-dropdown-btn');
     const taskDropdown = document.getElementById('task-emp-dropdown');
     if (taskDropdownBtn && taskDropdown) {
-      taskDropdownBtn.onclick = () => {
-        taskDropdown.style.display = taskDropdown.style.display === 'none' ? 'block' : 'none';
-      };
-      document.addEventListener('click', (e) => {
-        if (!taskDropdownBtn.contains(e.target) && !taskDropdown.contains(e.target)) {
-          taskDropdown.style.display = 'none';
-        }
-      });
+        taskDropdownBtn.onclick = () => {
+            taskDropdown.style.display = taskDropdown.style.display === 'none' ? 'block' : 'none';
+        };
+        document.addEventListener('click', (e) => {
+            if (!taskDropdownBtn.contains(e.target) && !taskDropdown.contains(e.target)) {
+                taskDropdown.style.display = 'none';
+            }
+        });
     }
 
     // INITIAL DATA FETCH
     await loadData();
-    refreshUI(false); 
+    refreshUI(false);
 });
 
 function refreshUI(shouldReload = false) {
-    if (shouldReload) loadData(); 
+    if (shouldReload) loadData();
     if (currentUser) {
         if (currentUser.role === 'admin') {
             if (document.getElementById('admin-view')) renderAdmin();
@@ -231,27 +204,46 @@ if (loginForm) {
         const user = document.getElementById('username')?.value?.trim();
         const pass = document.getElementById('password')?.value;
 
+        if (!user || !pass) return notify('Please fill all fields', 'red');
+
+        // ADMIN LOGIN
         if (user === 'thiran' && pass === 'admin@thiran') {
             currentUser = { name: 'Thiran MD', role: 'admin' };
             showView('admin-view');
             notify('Logged in as Administrator', 'blue');
+            return;
+        }
+
+        // EMPLOYEE LOGIN
+        const passCorrect = (pass === 'thiran*2026');
+        if (!passCorrect) return notify('Invalid password!', 'red');
+
+        const map = {
+            'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
+            'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
+            'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P',
+            'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M', 'nisha': 'Nisha', 'sam': 'Sam'
+        };
+
+        const cleanUser = user.toLowerCase();
+        let matchedName = null;
+
+        // Try map first (shorthand)
+        if (map[cleanUser]) {
+            matchedName = map[cleanUser];
         } else {
-            const map = {
-                'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
-                'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
-                'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P', 'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M',
-                'nisha': 'Nisha', 'sam': 'Sam'
-            };
-            const cleanUser = user?.toLowerCase();
-            if (cleanUser && map[cleanUser] && pass === 'thiran*2026') {
-                currentUser = { name: map[cleanUser], role: 'employee' };
-                const welcomeText = document.getElementById('welcome-text');
-                if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
-                showView('employee-view');
-                notify(`Welcome back, ${currentUser.name}!`, 'blue');
-            } else {
-                notify('Invalid credentials! Check name / pass.', 'red');
-            }
+            // Try direct match in EMPLOYEES_LIST
+            matchedName = EMPLOYEES_LIST.find(emp => emp.toLowerCase().trim() === cleanUser);
+        }
+
+        if (matchedName) {
+            currentUser = { name: matchedName, role: 'employee' };
+            const welcomeText = document.getElementById('welcome-text');
+            if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
+            showView('employee-view');
+            notify(`Welcome back, ${currentUser.name}!`, 'blue');
+        } else {
+            notify('User not found! Try shorthand (e.g., "mogesh") or full name.', 'red');
         }
     };
 }
@@ -560,7 +552,7 @@ function populateTaskEmployeeDropdown() {
         } else {
             selectedTaskEmployees.clear();
         }
-        populateTaskEmployeeDropdown(); 
+        populateTaskEmployeeDropdown();
         updateTaskSelectedCount();
     };
 
@@ -695,7 +687,7 @@ document.getElementById('toggle-password').onclick = function () {
 // TASK MANAGEMENT LOGIC
 function renderAdminTasks() {
     populateTaskEmployeeDropdown();
-    
+
     const list = document.getElementById('admin-task-list');
     if (!list) return;
 
@@ -818,137 +810,117 @@ function renderUserTasks() {
     lucide.createIcons();
 }
 
-window.handleSubmission = async function(taskId, input) {
-    const file = input.files[0];
-    if (!file) return;
+window.handleSubmission = function (taskId, input) {
+        const file = input.files[0];
+        if (!file) return;
 
-    // Use a toast to show progress since Supabase upload can take a few seconds
-    const progressToast = notify('Uploading file to cloud...', 'blue');
+        if (file.size > 5 * 1024 * 1024) return notify('File too large! Max 5MB.', 'red');
 
-    try {
-        // Upload the file to the bucket named 'my-files' 
-        // We use folder/${file.name} or similar structure
-        const filePath = `tasks/${taskId}/${file.name}`;
-        const { data, error } = await supabase.storage
-            .from('my-files')
-            .upload(filePath, file, {
-                upsert: true // Overwrite if it exists
-            });
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const task = tasksArray.find(t => t.id === taskId);
+            if (task) {
+                task.status = 'Submitted';
+                task.completionTime = Date.now();
+                task.proof = e.target.result;
+                task.fileName = file.name;
+                saveData();
+                notify('Task submitted successfully!', 'green');
+                renderUserTasks();
+                renderBoosterLeaderboard();
+            }
+        };
+        reader.onerror = () => notify('Error reading file!', 'red');
+        reader.readAsDataURL(file);
+    };
 
-        if (error) {
-            notify("Error uploading: " + error.message, 'red');
-            return;
-        }
-
-        // Get the public URL for the file
-        const { data: publicData } = supabase.storage
-            .from('my-files')
-            .getPublicUrl(filePath);
-
-        const task = tasksArray.find(t => t.id === taskId);
-        if (task) {
-            task.status = 'Submitted';
-            task.completionTime = Date.now();
-            task.proof = publicData.publicUrl; // Store the URL instead of base64
-            task.fileName = file.name;
-            saveData();
-            notify('Success! File uploaded to cloud.', 'green');
-            renderUserTasks();
-            renderBoosterLeaderboard();
-        }
-    } catch (err) {
-        console.error('Upload catch error:', err);
-        notify("Unexpected upload error!", 'red');
-    }
-};
-
-function deleteSubmission(taskId) {
-    if (confirm('Are you sure you want to delete this submission? You can upload a new proof after deleting.')) {
-        const task = tasksArray.find(t => t.id === taskId);
-        if (task) {
-            task.status = 'Pending';
-            task.proof = null;
-            task.fileName = null;
-            saveData();
-            notify('Submission deleted. You can re-submit now.', 'red');
-            renderUserTasks();
+    function deleteSubmission(taskId) {
+        if (confirm('Are you sure you want to delete this submission? You can upload a new proof after deleting.')) {
+            const task = tasksArray.find(t => t.id === taskId);
+            if (task) {
+                task.status = 'Pending';
+                task.proof = null;
+                task.fileName = null;
+                saveData();
+                notify('Submission deleted. You can re-submit now.', 'red');
+                renderUserTasks();
+            }
         }
     }
-}
 
-function openProof(data, filename) {
-    const modal = document.getElementById('proof-modal');
-    const content = document.getElementById('modal-content-area');
-    const dlBtn = document.getElementById('modal-download');
-    const filenameLabel = document.getElementById('modal-filename');
+    function openProof(data, filename) {
+        const modal = document.getElementById('proof-modal');
+        const content = document.getElementById('modal-content-area');
+        const dlBtn = document.getElementById('modal-download');
+        const filenameLabel = document.getElementById('modal-filename');
 
-    if (!modal || !content || !dlBtn || !filenameLabel) return;
+        if (!modal || !content || !dlBtn || !filenameLabel) return;
 
-    filenameLabel.textContent = filename;
-    dlBtn.href = data;
-    dlBtn.download = filename;
+        filenameLabel.textContent = filename;
+        dlBtn.href = data;
+        dlBtn.download = filename;
 
-    if (data.startsWith('data:image')) {
-        content.innerHTML = `<img src="${data}" style="max-width:100%; height:auto; border-radius:0.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);">`;
-    } else if (data.indexOf('application/pdf') !== -1) {
-        content.innerHTML = `<embed src="${data}" type="application/pdf" width="100%" height="100%" style="border-radius:0.5rem;">`;
-    } else {
-        content.innerHTML = `
+        if (data.startsWith('data:image')) {
+            content.innerHTML = `<img src="${data}" style="max-width:100%; height:auto; border-radius:0.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);">`;
+        } else if (data.indexOf('application/pdf') !== -1) {
+            content.innerHTML = `<embed src="${data}" type="application/pdf" width="100%" height="100%" style="border-radius:0.5rem;">`;
+        } else {
+            content.innerHTML = `
             <div style="text-align:center; padding:3rem;">
                 <i data-lucide="file-text" size="64" style="color:var(--primary); margin-bottom:1.5rem;"></i>
                 <p style="font-size:1.1rem; font-weight:600;">This file format cannot be previewed directly.</p>
                 <p style="font-size:0.9rem; color:var(--text-muted); margin-top:0.5rem;">Please use the button below to download and view it.</p>
             </div>
         `;
+            lucide.createIcons();
+        }
+
+        modal.style.display = 'flex';
         lucide.createIcons();
     }
 
-    modal.style.display = 'flex';
-    lucide.createIcons();
-}
+    function closeProof() {
+        const modal = document.getElementById('proof-modal');
+        if (modal) modal.style.display = 'none';
+    }
 
-function closeProof() {
-    const modal = document.getElementById('proof-modal');
-    if (modal) modal.style.display = 'none';
-}
+    function renderBoosterLeaderboard() {
+        const adminList = document.getElementById('admin-booster-list');
+        const userList = document.getElementById('user-booster-list');
+        if (!adminList && !userList) return;
 
-function renderBoosterLeaderboard() {
-    const adminList = document.getElementById('admin-booster-list');
-    const userList = document.getElementById('user-booster-list');
-    if (!adminList && !userList) return;
+        // Get all employees (exclude admin)
+        const employees = EMPLOYEES_LIST;
 
-    // Get all employees (exclude admin)
-    const employees = EMPLOYEES_LIST;
+        // Find stats for each employee
+        const stats = employees.map(name => {
+            const userTasks = tasksArray.filter(t => t.user === name);
+            const completed = userTasks.filter(t => t.status === 'Submitted');
+            const pending = userTasks.length - completed.length;
 
-    // Find stats for each employee
-    const stats = employees.map(name => {
-        const userTasks = tasksArray.filter(t => t.user === name);
-        const completed = userTasks.filter(t => t.status === 'Submitted');
-        const pending = userTasks.length - completed.length;
+            // Speed score (higher is faster)
+            let speedFactor = 0;
+            if (completed.length > 0) {
+                // Find earliest completion
+                const earliest = [...completed].sort((a, b) => a.completionTime - b.completionTime)[0];
+                speedFactor = earliest ? 1 / (earliest.completionTime / 1000000000000) : 0;
+            }
 
-        // Speed score (higher is faster)
-        let speedFactor = 0;
-        if (completed.length > 0) {
-            // Find earliest completion
-            const earliest = [...completed].sort((a, b) => a.completionTime - b.completionTime)[0];
-            speedFactor = earliest ? 1 / (earliest.completionTime / 1000000000000) : 0;
-        }
+            return {
+                name,
+                played: userTasks.length,
+                won: completed.length,
+                lost: pending,
+                pts: completed.length * 2, // 2 points per completed task
+                speed: speedFactor,
+                bestTime: completed.length > 0 ? Math.min(...completed.map(t => t.completionTime)) : Infinity
+            };
+        });
 
-        return {
-            name,
-            played: userTasks.length,
-            won: completed.length,
-            lost: pending,
-            pts: completed.length * 2, // 2 points per completed task
-            speed: speedFactor,
-            bestTime: completed.length > 0 ? Math.min(...completed.map(t => t.completionTime)) : Infinity
-        };
-    });
+        // Sort by Name Alphabetically
+        stats.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Sort by Name Alphabetically
-    stats.sort((a, b) => a.name.localeCompare(b.name));
-
-    const tableHtml = `
+        const tableHtml = `
         <table style="width: 100%; border-collapse: collapse; min-width: 600px; color: white;">
             <thead>
                 <tr style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); text-transform: uppercase; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em;">
@@ -963,8 +935,8 @@ function renderBoosterLeaderboard() {
             </thead>
             <tbody>
                 ${stats.map((row, i) => {
-        const rowClass = (i < 4) ? 'style="background: rgba(16, 185, 129, 0.03);"' : '';
-        return `
+            const rowClass = (i < 4) ? 'style="background: rgba(16, 185, 129, 0.03);"' : '';
+            return `
                         <tr ${rowClass} style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='${i < 4 ? 'rgba(16, 185, 129, 0.03)' : 'transparent'}'">
                             <td style="padding: 1.25rem 1rem; font-weight: 700; ${i < 4 ? 'color: #10b981;' : 'color: rgba(255,255,255,0.5);'}">${i + 1}</td>
                             <td style="padding: 1.25rem 1rem;">
@@ -982,13 +954,13 @@ function renderBoosterLeaderboard() {
                             <td style="padding: 1.25rem 1rem; text-align: center; font-weight: 900; color: #fbbf24; font-size: 1.1rem;">${row.pts}</td>
                         </tr>
                     `;
-    }).join('')}
+        }).join('')}
             </tbody>
         </table>
     `;
 
-    if (adminList) adminList.innerHTML = tableHtml;
-    if (userList) userList.innerHTML = tableHtml;
+        if (adminList) adminList.innerHTML = tableHtml;
+        if (userList) userList.innerHTML = tableHtml;
 
-    lucide.createIcons();
-}
+        lucide.createIcons();
+    }
