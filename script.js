@@ -1,5 +1,26 @@
 /* Thiran Attendance Tracker - Firebase Enabled */
-import { db, storage, doc, setDoc, getDoc, collection, query, getDocs, deleteDoc, ref, uploadString, getDownloadURL } from './lib/firebase.js';
+// Firebase functions will be available globally from index.html initialization
+
+// Wait for Firebase to be initialized
+function waitForFirebase() {
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            // Check if Firebase is ready (compat API)
+            if (window.firebaseReady && window.db) {
+                clearInterval(checkInterval);
+                console.log("✅ Firebase is now ready!");
+                resolve();
+            } else if (attempts > 100) {  // 10 seconds (100 * 100ms)
+                clearInterval(checkInterval);
+                console.warn("⚠️ Firebase initialization timeout - using offline mode");
+                resolve();
+            }
+        }, 100);
+    });
+}
 
 const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M', 'Nisha', 'Sam'];
 
@@ -18,34 +39,54 @@ let isSyncing = false;
 
 async function loadData() {
     try {
-        const snap = await getDoc(doc(db, "app_state", "attendance_hub"));
-        if (snap.exists()) {
+        // Wait for Firebase to be initialized
+        await waitForFirebase();
+        
+        if (!window.db) {
+            console.warn("Firebase not available, using offline mode");
+            return Promise.resolve();
+        }
+        
+        // Using compat API: db.collection().doc().get()
+        const snap = await window.db.collection("app_state").doc("attendance_hub").get();
+        if (snap.exists) {
             const data = snap.data();
             attendanceRecordsArray = data.attendance || [];
             tasksArray = data.tasks || [];
             conductedCount = data.conductedCount || 0;
-            console.log("Firebase sync completed.");
+            console.log("✅ Firebase data loaded successfully");
+        } else {
+            console.log("ℹ️ No existing data in Firebase - starting fresh");
         }
     } catch (err) {
-        console.error("Firebase Load Error:", err);
+        console.error("❌ Firebase Load Error:", err);
     }
     return Promise.resolve();
 }
 
 async function saveData() {
     if (isSyncing) return;
-    isSyncing = true;
+    
     try {
-        // Sync everything to a single document for simplicity (Matrix style)
-        // If the task proofs are huge, this could exceed 1MB, so we use Firebase Storage for PDFs
-        await setDoc(doc(db, "app_state", "attendance_hub"), {
+        // Wait for Firebase to be initialized
+        await waitForFirebase();
+        
+        if (!window.db) {
+            console.warn("Firebase not available, skipping data save");
+            return;
+        }
+        
+        isSyncing = true;
+        // Using compat API: db.collection().doc().set()
+        await window.db.collection("app_state").doc("attendance_hub").set({
             attendance: attendanceRecordsArray,
             tasks: tasksArray,
             conductedCount: conductedCount,
             lastUpdated: new Date().toISOString()
         });
+        console.log("✅ Data saved to Firebase");
     } catch (err) {
-        console.error("Firebase Save Error:", err);
+        console.error("❌ Firebase Save Error:", err);
         notify("Sync Failed. Check Console.", "red");
     } finally {
         isSyncing = false;
@@ -55,24 +96,92 @@ async function saveData() {
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Firebase to be initialized first
+    console.log("Waiting for Firebase initialization...");
+    await waitForFirebase();
+    
+    // 1. WIRE UP LOGIN IMMEDIATELY (Highest Priority)
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            console.log("Login submitted...");
+            try {
+                const user = document.getElementById('username')?.value?.trim();
+                const pass = document.getElementById('password')?.value;
+
+                if (!user || !pass) return notify('Please fill all fields', 'red');
+
+                const cleanUser = user.toLowerCase();
+
+                // ADMIN LOGIN
+                if (cleanUser === 'thiran' && pass === 'admin@thiran') {
+                    currentUser = { name: 'Thiran MD', role: 'admin' };
+                    console.log("Admin login successful, showing admin view");
+                    await loadData();
+                    await showView('admin-view');
+                    notify('Logged in as Administrator', 'blue');
+                    return;
+                }
+
+                // EMPLOYEE LOGIN
+                const passCorrect = (pass === 'thiran*2026');
+                if (!passCorrect) return notify('Invalid password!', 'red');
+
+                const map = {
+                    'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
+                    'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
+                    'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P',
+                    'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M', 'nisha': 'Nisha', 'sam': 'Sam'
+                };
+
+                let matchedName = null;
+                if (map[cleanUser]) {
+                    matchedName = map[cleanUser];
+                } else {
+                    matchedName = EMPLOYEES_LIST.find(emp => emp.toLowerCase().trim() === cleanUser);
+                }
+
+                if (matchedName) {
+                    currentUser = { name: matchedName, role: 'employee' };
+                    const welcomeText = document.getElementById('welcome-text');
+                    if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
+                    console.log("Employee login successful, showing employee view");
+                    await loadData();
+                    await showView('employee-view');
+                    notify(`Welcome back, ${currentUser.name}!`, 'blue');
+                } else {
+                    notify('User not found! Try shorthand (e.g., "mogesh") or full name.', 'red');
+                }
+            } catch (err) {
+                console.error("Login error:", err);
+                notify('Login failed: ' + err.message, 'red');
+            }
+        };
+    }
+
+    // 2. CONTINUE WITH UI SETUP
     updateClock();
     setInterval(updateClock, 1000);
-
-    // Initial data setup
-    refreshUI(false);
-
-    // Frequent UI Refresh for clock/animations
+    
+    // Initial UI refresh
+    refreshUI(false).catch(err => console.error("Initial refreshUI failed:", err));
+    
+    // Periodic UI refresh
     setInterval(() => {
-        refreshUI(false);
+        if (currentUser) {
+            refreshUI(false).catch(err => console.error("Periodic refreshUI failed:", err));
+        }
     }, 2000);
 
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // wire up dropdown toggle
     const dropdownBtn = document.getElementById('emp-dropdown-btn');
     const dropdown = document.getElementById('emp-dropdown');
     if (dropdownBtn && dropdown) {
-        dropdownBtn.onclick = () => {
+        dropdownBtn.onclick = (e) => {
+            e.stopPropagation();
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         };
         // Close when clicking outside
@@ -152,7 +261,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 selectedTaskEmployees.clear();
                 updateTaskSelectedCount();
                 renderAdminTasks();
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             };
 
             if (pdfFile) {
@@ -193,103 +302,94 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // INITIAL DATA FETCH
-    await loadData();
-    refreshUI(false);
+    // INITIAL DATA FETCH - MOVED UP
+    try {
+        await loadData();
+        refreshUI(false);
+    } catch (err) {
+        console.error("Initial load/refresh failed", err);
+    }
 });
 
-function refreshUI(shouldReload = false) {
-    if (shouldReload) loadData();
-    if (currentUser) {
-        if (currentUser.role === 'admin') {
-            if (document.getElementById('admin-view')) renderAdmin();
-        } else if (currentUser.role === 'employee') {
-            if (document.getElementById('employee-view')) renderEmployee();
-            if (document.getElementById('employee-tasks-view')) renderUserTasks();
+async function refreshUI(shouldReload = false) {
+    try {
+        if (shouldReload) await loadData();
+        if (currentUser) {
+            if (currentUser.role === 'admin') {
+                if (document.getElementById('admin-view')) renderAdmin();
+            } else if (currentUser.role === 'employee') {
+                if (document.getElementById('employee-view')) renderEmployee();
+                if (document.getElementById('employee-tasks-view')) renderUserTasks();
+            }
+            if (document.getElementById('score-list-view')) renderScoreList();
+            if (document.getElementById('admin-tasks-view')) renderAdminTasks();
         }
-        if (document.getElementById('score-list-view')) renderScoreList();
-        if (document.getElementById('admin-tasks-view')) renderAdminTasks();
-        renderBoosterLeaderboard();
+        try {
+            renderBoosterLeaderboard();
+        } catch (err) {
+            console.warn("renderBoosterLeaderboard error:", err);
+        }
+    } catch (err) {
+        console.error("UI Refresh Error:", err);
     }
 }
 
-function showView(viewId) {
+async function showView(viewId) {
     try {
+        console.log("showView called with:", viewId);
+        
+        // Hide all views
         const views = document.querySelectorAll('.view');
-        views.forEach(v => {
+        console.log("Found views:", views.length);
+        views.forEach((v, idx) => {
             v.style.display = 'none';
             v.classList.remove('fade-in');
+            console.log(`Hidden view ${idx}:`, v.id);
         });
 
+        // Show target view
         const targetView = document.getElementById(viewId);
+        console.log("Target view element:", targetView);
+        
         if (targetView) {
-            targetView.style.display = (viewId === 'login-view') ? 'flex' : 'block';
+            const displayValue = (viewId === 'login-view') ? 'flex' : 'block';
+            targetView.style.display = displayValue;
+            targetView.style.visibility = 'visible';
+            targetView.style.opacity = '1';
             targetView.classList.add('fade-in');
-            refreshUI();
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            console.log(`Showed view ${viewId} with display:${displayValue}`);
+            
+            // Refresh UI if user is logged in
+            if (currentUser) {
+                console.log("Current user:", currentUser);
+                await refreshUI();
+            }
+            
+            // Initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+                console.log("Lucide icons created");
+            } else {
+                console.warn("Lucide not available");
+            }
+            return Promise.resolve();
+        } else {
+            console.error(`View ${viewId} not found in DOM`);
+            throw new Error(`View element with id '${viewId}' not found`);
         }
     } catch (err) {
         console.error('CRITICAL: showView Failed', err);
+        throw err;
     }
 }
 
-// AUTH
-const loginForm = document.getElementById('login-form');
-if (loginForm) {
-    loginForm.onsubmit = (e) => {
-        e.preventDefault();
-        const user = document.getElementById('username')?.value?.trim();
-        const pass = document.getElementById('password')?.value;
-
-        if (!user || !pass) return notify('Please fill all fields', 'red');
-
-        // ADMIN LOGIN
-        if (user === 'thiran' && pass === 'admin@thiran') {
-            currentUser = { name: 'Thiran MD', role: 'admin' };
-            showView('admin-view');
-            notify('Logged in as Administrator', 'blue');
-            return;
-        }
-
-        // EMPLOYEE LOGIN
-        const passCorrect = (pass === 'thiran*2026');
-        if (!passCorrect) return notify('Invalid password!', 'red');
-
-        const map = {
-            'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
-            'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
-            'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P',
-            'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M', 'nisha': 'Nisha', 'sam': 'Sam'
-        };
-
-        const cleanUser = user.toLowerCase();
-        let matchedName = null;
-
-        // Try map first (shorthand)
-        if (map[cleanUser]) {
-            matchedName = map[cleanUser];
-        } else {
-            // Try direct match in EMPLOYEES_LIST
-            matchedName = EMPLOYEES_LIST.find(emp => emp.toLowerCase().trim() === cleanUser);
-        }
-
-        if (matchedName) {
-            currentUser = { name: matchedName, role: 'employee' };
-            const welcomeText = document.getElementById('welcome-text');
-            if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
-            showView('employee-view');
-            notify(`Welcome back, ${currentUser.name}!`, 'blue');
-        } else {
-            notify('User not found! Try shorthand (e.g., "mogesh") or full name.', 'red');
-        }
-    };
-}
+// AUTH (Moved into DOMContentLoaded)
 
 function logout() {
     currentUser = null;
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
-    showView('login-view');
+    showView('login-view').catch(err => console.error("Logout showView error:", err));
     // resetTracking(); // This was probably a mistake in the original script.js or defined later. I'll check.
     notify('Logged out successfully', 'blue');
 }
@@ -322,11 +422,12 @@ function calculateAttendanceScore(empName, count) {
 }
 
 function renderAdmin() {
-    const head = document.getElementById('table-headers');
-    // ensure manual attendance select is populated each time admin view renders
-    populateManualAttendance();
-    const body = document.getElementById('table-body');
-    const presentCount = EMPLOYEES_LIST.filter(emp => attendanceRecordsArray.some(r => r.name === emp && r.sessionIndex === conductedCount)).length;
+    try {
+        const head = document.getElementById('table-headers');
+        // ensure manual attendance select is populated each time admin view renders
+        populateManualAttendance();
+        const body = document.getElementById('table-body');
+        const presentCount = EMPLOYEES_LIST.filter(emp => attendanceRecordsArray.some(r => r.name === emp && r.sessionIndex === conductedCount)).length;
 
     if (head) {
         head.innerHTML = '<th class="sticky-col">Employee Name</th>';
@@ -362,66 +463,78 @@ function renderAdmin() {
     if (totalEmpEl) totalEmpEl.innerText = EMPLOYEES_LIST.length;
     if (avgPctEl) avgPctEl.innerText = Math.round(totalScore / EMPLOYEES_LIST.length) + '%';
     if (criticalEl) criticalEl.innerText = criticalCount;
+    } catch (err) {
+        console.error("renderAdmin error:", err);
+    }
 }
 
 // EMPLOYEE CORE
 function renderEmployee() {
-    const strip = document.getElementById('progress-strip');
-    const hHead = document.getElementById('user-table-headers');
-    const hBody = document.getElementById('user-table-body');
+    try {
+        const strip = document.getElementById('progress-strip');
+        const hHead = document.getElementById('user-table-headers');
+        const hBody = document.getElementById('user-table-body');
 
-    // Show attendance history for employees
-    const historySection = document.querySelector('#employee-view .table-container');
-    if (historySection) historySection.style.display = 'block';
-    const progressSection = document.getElementById('progress-strip').parentElement;
-    if (progressSection) progressSection.style.display = 'block';
-
-    const myRecs = attendanceRecordsArray.filter(r => r.name === currentUser.name);
-
-    // Update User Percentage Badge
-    const score = calculateAttendanceScore(currentUser.name, conductedCount);
-    const badge = document.getElementById('user-pct-badge');
-    if (badge) {
-        badge.innerText = score + '%';
-        badge.style.color = score >= 80 ? '#22c55e' : (score >= 60 ? 'var(--primary)' : '#ef4444');
-    }
-
-    if (hHead && hBody) {
-        hHead.innerHTML = '<th class="sticky-col">Status Category</th>';
-        let bodyHtml = `<td class="sticky-col">Session Result</td>`;
-
-        for (let i = 0; i < 50; i++) {
-            hHead.innerHTML += `<th>Meet ${i + 1}</th>`;
-            const rec = myRecs.find(r => r.sessionIndex === i);
-            if (rec) bodyHtml += `<td><span class="badge-present">Present</span></td>`;
-            else if (i < conductedCount) bodyHtml += `<td><span class="badge-absent">Absent</span></td>`;
-            else bodyHtml += `<td><span style="opacity:0.1; color:var(--text-muted);">—</span></td>`;
-        }
-        hBody.innerHTML = `<tr>${bodyHtml}</tr>`;
-    }
-
-    strip.innerHTML = '';
-    for (let i = 0; i < 50; i++) {
-        const rec = myRecs.find(r => r.sessionIndex === i);
-        let stateClass = '';
-        let iconContent = '';
-        if (rec) {
-            stateClass = 'active';
-            iconContent = '<i data-lucide="check-circle" size="20" color="#22d3ee"></i><span style="font-size:0.65rem; color:#22d3ee; font-weight:700">PRESENT</span>';
-        } else if (i < conductedCount) {
-            iconContent = '<i data-lucide="x-circle" size="20" color="#f87171"></i><span style="font-size:0.65rem; color:#f87171; font-weight:700">ABSENT</span>';
-        } else {
-            iconContent = '<i data-lucide="clock" size="20" style="opacity:0.3"></i><span style="font-size:0.65rem; opacity:0.3;">UPCOMING</span>';
+        // Show attendance history for employees
+        const historySection = document.querySelector('#employee-view .table-container');
+        if (historySection) historySection.style.display = 'block';
+        
+        if (strip) {
+            const progressSection = strip.parentElement;
+            if (progressSection) progressSection.style.display = 'block';
         }
 
-        strip.innerHTML += `
-            <div class="progress-item ${stateClass}">
-                <span style="font-size:0.7rem; font-weight:700; opacity:0.5;">MEET ${i + 1}</span>
-                ${iconContent}
-            </div>
-        `;
+        const myRecs = attendanceRecordsArray.filter(r => r.name === currentUser.name);
+
+        // Update User Percentage Badge
+        const score = calculateAttendanceScore(currentUser.name, conductedCount);
+        const badge = document.getElementById('user-pct-badge');
+        if (badge) {
+            badge.innerText = score + '%';
+            badge.style.color = score >= 80 ? '#22c55e' : (score >= 60 ? 'var(--primary)' : '#ef4444');
+        }
+
+        if (hHead && hBody) {
+            hHead.innerHTML = '<th class="sticky-col">Status Category</th>';
+            let bodyHtml = `<td class="sticky-col">Session Result</td>`;
+
+            for (let i = 0; i < 50; i++) {
+                hHead.innerHTML += `<th>Meet ${i + 1}</th>`;
+                const rec = myRecs.find(r => r.sessionIndex === i);
+                if (rec) bodyHtml += `<td><span class="badge-present">Present</span></td>`;
+                else if (i < conductedCount) bodyHtml += `<td><span class="badge-absent">Absent</span></td>`;
+                else bodyHtml += `<td><span style="opacity:0.1; color:var(--text-muted);">—</span></td>`;
+            }
+            hBody.innerHTML = `<tr>${bodyHtml}</tr>`;
+        }
+
+        if (strip) {
+            strip.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                const rec = myRecs.find(r => r.sessionIndex === i);
+                let stateClass = '';
+                let iconContent = '';
+                if (rec) {
+                    stateClass = 'active';
+                    iconContent = '<i data-lucide="check-circle" size="20" color="#22d3ee"></i><span style="font-size:0.65rem; color:#22d3ee; font-weight:700">PRESENT</span>';
+                } else if (i < conductedCount) {
+                    iconContent = '<i data-lucide="x-circle" size="20" color="#f87171"></i><span style="font-size:0.65rem; color:#f87171; font-weight:700">ABSENT</span>';
+                } else {
+                    iconContent = '<i data-lucide="clock" size="20" style="opacity:0.3"></i><span style="font-size:0.65rem; opacity:0.3;">UPCOMING</span>';
+                }
+
+                strip.innerHTML += `
+                    <div class="progress-item ${stateClass}">
+                        <span style="font-size:0.7rem; font-weight:700; opacity:0.5;">MEET ${i + 1}</span>
+                        ${iconContent}
+                    </div>
+                `;
+            }
+        }
+    } catch (err) {
+        console.error("renderEmployee error:", err);
     }
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function renderScoreList() {
@@ -714,17 +827,24 @@ function updateClock() {
 }
 
 function notify(text, color) {
-    Toastify({ text, duration: 4000, gravity: "top", position: "right", style: { background: color === 'red' ? '#ef4444' : (color === 'green' ? '#22c55e' : '#6366f1'), borderRadius: '12px', padding: '12px 24px', fontWeight: '600' } }).showToast();
+    if (typeof Toastify !== 'undefined') {
+        Toastify({ text, duration: 4000, gravity: "top", position: "right", style: { background: color === 'red' ? '#ef4444' : (color === 'green' ? '#22c55e' : '#6366f1'), borderRadius: '12px', padding: '12px 24px', fontWeight: '600' } }).showToast();
+    } else {
+        console.log(`NOTIFICATION (${color}): ${text}`);
+    }
 }
 
 // Password Eye Toggle
-document.getElementById('toggle-password').onclick = function () {
-    const input = document.getElementById('password');
-    const isPass = input.type === 'password';
-    input.type = isPass ? 'text' : 'password';
-    this.innerHTML = isPass ? '<i data-lucide="eye-off" size="16"></i>' : '<i data-lucide="eye" size="16"></i>';
-    lucide.createIcons();
-};
+const togglePasswordBtn = document.getElementById('toggle-password');
+if (togglePasswordBtn) {
+    togglePasswordBtn.onclick = function () {
+        const input = document.getElementById('password');
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        this.innerHTML = isPass ? '<i data-lucide="eye-off" size="16"></i>' : '<i data-lucide="eye" size="16"></i>';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+}
 
 // TASK MANAGEMENT LOGIC
 function renderAdminTasks() {
@@ -780,7 +900,7 @@ function renderAdminTasks() {
             </div>
         `;
     });
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function deleteTask(id) {
@@ -850,7 +970,7 @@ function renderUserTasks() {
             </div>
         `;
     });
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function handleSubmission(taskId, input) {
@@ -866,9 +986,9 @@ async function handleSubmission(taskId, input) {
         try {
             // Upload to Firebase Storage
             const storagePath = `proofs/${taskId}_${file.name}`;
-            const fileRef = ref(storage, storagePath);
-            await uploadString(fileRef, e.target.result, 'data_url');
-            const downloadURL = await getDownloadURL(fileRef);
+            const fileRef = window.ref(window.storage, storagePath);
+            await window.uploadString(fileRef, e.target.result, 'data_url');
+            const downloadURL = await window.getDownloadURL(fileRef);
 
             const task = tasksArray.find(t => t.id === taskId);
             if (task) {
@@ -930,11 +1050,11 @@ async function handleSubmission(taskId, input) {
                 <p style="font-size:0.9rem; color:var(--text-muted); margin-top:0.5rem;">Please use the button below to download and view it.</p>
             </div>
         `;
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         modal.style.display = 'flex';
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function closeProof() {
@@ -1020,5 +1140,5 @@ async function handleSubmission(taskId, input) {
         if (adminList) adminList.innerHTML = tableHtml;
         if (userList) userList.innerHTML = tableHtml;
 
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
