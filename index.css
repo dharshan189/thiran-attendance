@@ -1,8 +1,8 @@
-/* Thiran Attendance Tracker - Prestige Yellow Design System */
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --primary: #facc15; /* Vibrant Yellow */
+    --primary: #facc15; 
     --primary-glow: rgba(250, 204, 21, 0.35);
     --secondary: #ffffff; /* Pure White */
     --secondary-glow: rgba(255, 255, 255, 0.15);
