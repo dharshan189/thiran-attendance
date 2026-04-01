@@ -1,9 +1,32 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
+  "version": 2,
+  "public": true,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "headers": [
     {
-      "source": "/((?!api/|.*\\..*).*)",
-      "destination": "/index.html"
+      "source": "/lib/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
