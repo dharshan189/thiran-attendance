@@ -7,21 +7,10 @@
   <title>Thiran Smart Hub</title>
   <link rel="stylesheet" href="index.css">
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
   <!-- Toastify Notifications -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.js"></script>
-  <!-- Firebase SDK (Modular) -->
-  <script type="module">
-    import { db, storage, ref, uploadString, getDownloadURL } from './lib/firebase.js';
-    window.db = db;
-    window.storage = storage;
-    window.ref = ref;
-    window.uploadString = uploadString;
-    window.getDownloadURL = getDownloadURL;
-    window.firebaseReady = true;
-    console.log("✅ Firebase initialized via modular lib");
-  </script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
 <body>
@@ -50,7 +39,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(99, 102, 241, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--primary);">
-                <i data-lucide="fingerprint" size="20"></i>
+                <span>🛡️</span>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Secure Verification</h4>
@@ -61,7 +50,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(34, 211, 238, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--secondary);">
-                <i data-lucide="activity" size="20"></i>
+                <span>⚡</span>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem
@@ -73,7 +62,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(244, 114, 182, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--accent);">
-                <i data-lucide="layers" size="20"></i>
+                <span>📊</span>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Automated Analytics</h4>
@@ -95,9 +84,8 @@
               <label
                 style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Username</label>
               <div style="position: relative;">
-                <i data-lucide="user" size="16"
-                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                <input type="text" id="username" name="username" autocomplete="username" class="input-field" placeholder="Enter your Username"
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">👥</span>
+                <input type="text" id="username" class="input-field" placeholder="Enter your Username"
                   style="padding-left: 2.75rem; font-size: 0.9rem;" required>
               </div>
             </div>
@@ -105,19 +93,18 @@
               <label
                 style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Password</label>
               <div style="position: relative;">
-                <i data-lucide="lock" size="16"
-                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                <input type="password" id="password" name="password" autocomplete="current-password" class="input-field" placeholder="Enter your Password"
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔒</span>
+                <input type="password" id="password" class="input-field" placeholder="Enter your Password"
                   style="padding-left: 2.75rem; padding-right: 3rem; font-size: 0.9rem;" required>
                 <button type="button" id="toggle-password"
                   style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">
-                  <i data-lucide="eye" size="16"></i>
+                  <span id="password-toggle-icon">👁️</span>
                 </button>
               </div>
             </div>
             <button type="submit" class="btn-primary"
               style="width: 100%; justify-content: center; height: 3.25rem; font-size: 1rem;">
-              <i data-lucide="key" size="18" style="margin-right: 0.5rem;"></i> Access Workspace
+              <span>🚪</span> Access Workspace
             </button>
           </form>
           <p style="margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">By accessing,
@@ -147,26 +134,26 @@
         </div>
         <div style="display: flex; gap: 1.75rem; align-items: center;">
           <div class="clock-widget" style="margin-right: 1.25rem;">
-            <i data-lucide="clock" size="18" style="color: var(--text-muted);"></i>
+            <span>⏰</span>
             <span id="admin-clock" class="clock-time">00:00:00</span>
           </div>
           <button onclick="showView('score-list-view')" class="btn-primary"
             style="background: rgba(34, 211, 238, 0.1); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.2); box-shadow: none;">
-            <i data-lucide="medal" size="18"></i>Attendance Performance
+            <span>🏆</span> Attendance Performance
           </button>
           <button onclick="showView('admin-tasks-view')" class="btn-primary"
             style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
-            <i data-lucide="package" size="18"></i> Task Management
+            <span>📋</span> Task Management
           </button>
           <button onclick="resetMatrix()" class="btn-outline"
             style="border-color: #ef4444; color: #ef4444; font-weight: 600;">
-            <i data-lucide="trash-2" size="18"></i> Reset Data
+            <span>🗑️</span> Reset Data
           </button>
           <button onclick="downloadSheet()" class="btn-primary" style="padding: 0.65rem 1.25rem;">
-            <i data-lucide="file-spreadsheet" size="18"></i> Export Spreadsheet
+            <span>📄</span> Export Spreadsheet
           </button>
           <button onclick="logout()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600;">
-            <i data-lucide="log-out" size="18"></i> Sign Out
+            <span>🚪</span> Sign Out
           </button>
         </div>
       </header>
@@ -178,7 +165,7 @@
         style="padding: 2rem; margin-bottom: 3.5rem; display: flex; flex-wrap: wrap; gap: 2rem;">
         <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
           <div style="background: rgba(250, 204, 21, 0.1); padding: 1rem; border-radius: 1rem;">
-            <i data-lucide="users" color="var(--primary)" size="28"></i>
+            <span style="font-size: 24px;">👥</span>
           </div>
           <div>
             <p
@@ -189,7 +176,7 @@
         </div>
         <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
           <div style="background: rgba(34, 211, 238, 0.1); padding: 1rem; border-radius: 1rem;">
-            <i data-lucide="bar-chart-3" color="#22d3ee" size="28"></i>
+            <span style="font-size: 24px;">📊</span>
           </div>
           <div>
             <p
@@ -200,7 +187,7 @@
         </div>
         <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1.25rem;">
           <div style="background: rgba(248, 113, 113, 0.1); padding: 1rem; border-radius: 1rem;">
-            <i data-lucide="alert-triangle" color="#f87171" size="28"></i>
+            <span style="font-size: 24px;">⚠️</span>
           </div>
           <div>
             <p
@@ -216,16 +203,15 @@
         style="padding:1.5rem; margin-bottom:2rem; position: relative; z-index: 100;">
         <h4 style="margin-bottom:1rem; font-size:1.1rem; font-weight:600;">Manual Attendance</h4>
         <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
-          <select id="manual-meet-index" class="input-field" style="width:180px;">
-            <!-- Meeting options 1-100 will be injected via JS -->
-          </select>
+          <input type="number" id="manual-meet-index" class="input-field" placeholder="Meeting #" min="1" max="50"
+            style="width:100px;">
           <button id="mark-present-btn" class="btn-primary">Mark Present</button>
           <button id="mark-absent-btn" class="btn-outline">Mark Absent</button>
           <div style="position: relative; margin-left: auto;">
             <button id="emp-dropdown-btn" class="input-field"
               style="min-width:250px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
               <span id="selected-count">Select Employees</span>
-              <i data-lucide="chevron-down" size="16"></i>
+              <span>▽</span>
             </button>
             <div id="emp-dropdown"
               style="position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.5rem; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
@@ -248,7 +234,7 @@
       <!-- BOOSTER LEADERBOARD (ADMIN VIEW) -->
       <div style="margin-top: 3.5rem;">
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-          <i data-lucide="zap" style="color: #fbbf24; fill: #fbbf24;" size="28"></i>
+          <span>⚡</span>
           <h3 style="font-size: 1.6rem; font-weight: 700;">Booster Leaderboard</h3>
         </div>
         <div class="glass-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(251, 191, 36, 0.2);">
@@ -279,7 +265,7 @@
           <h1 style="font-size: 1.85rem; font-weight: 700;">Task Management</h1>
         </div>
         <button onclick="showView('admin-view')" class="btn-outline">
-          <i data-lucide="chevron-left" size="18"></i> Back to Matrix
+          <span>◁</span> Back to Matrix
         </button>
       </header>
 
@@ -293,7 +279,7 @@
                 <button type="button" id="task-emp-dropdown-btn" class="input-field"
                   style="text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                   <span id="task-selected-count">Select Employees</span>
-                  <i data-lucide="chevron-down" size="16"></i>
+                  <span>▽</span>
                 </button>
                 <div id="task-emp-dropdown"
                   style="position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.5rem; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
@@ -327,12 +313,11 @@
               <div style="position: relative;">
                 <input type="file" id="task-assignment-pdf" class="input-field" accept="application/pdf"
                   style="padding-left: 3rem;">
-                <i data-lucide="file-text" size="18"
-                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">📄</span>
               </div>
             </div>
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
-              <i data-lucide="plus" size="18"></i> Assign Task
+              <span>➕</span> Assign Task
             </button>
           </form>
         </div>
@@ -355,7 +340,7 @@
           <h1 style="font-size: 1.85rem; font-weight: 700;">Performance Rankings</h1>
         </div>
         <button onclick="showView('admin-view')" class="btn-outline">
-          <i data-lucide="chevron-left" size="18"></i> Back to Matrix
+          <span>◁</span> Back to Matrix
         </button>
       </header>
 
@@ -397,15 +382,15 @@
         </div>
         <div style="display: flex; gap: 1.75rem; align-items: center;">
           <div class="clock-widget" style="margin-right: 1.25rem;">
-            <i data-lucide="clock" size="18" style="color: var(--text-muted);"></i>
+            <span>⏰</span>
             <span id="user-clock" class="clock-time">00:00:00</span>
           </div>
           <button onclick="showView('employee-tasks-view')" class="btn-primary"
             style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
-            <i data-lucide="list-checks" size="18"></i> My Tasks
+            <span>✅</span> My Tasks
           </button>
           <button onclick="logout()" class="btn-outline">
-            <i data-lucide="log-out" size="18"></i> Sign Out
+            <span>🚪</span> Sign Out
           </button>
         </div>
       </header>
@@ -438,7 +423,7 @@
           <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 0 0.5rem;">
             <div
               style="display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(45deg, #fbbf24, #f59e0b); border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
-              <i data-lucide="rocket" style="color: white;" size="24"></i>
+              <span>🚀</span>
             </div>
             <div>
               <h2 style="font-size: 1.5rem; font-weight: 800; color: white; margin: 0; line-height: 1;">Booster Points
@@ -474,7 +459,7 @@
           <h1 style="font-size: 1.85rem; font-weight: 700;">My Assignments</h1>
         </div>
         <button onclick="showView('employee-view')" class="btn-outline">
-          <i data-lucide="chevron-left" size="18"></i> Back to Dashboard
+          <span>◁</span> Back to Dashboard
         </button>
       </header>
       <div class="glass-card fade-in" style="padding: 2.5rem; margin-bottom: 3rem;">
@@ -502,7 +487,7 @@
           <span id="modal-filename" style="font-size:0.9rem; font-weight:600; color:var(--text-muted)"></span>
           <a id="modal-download" href="#" download="" class="btn-primary"
             style="padding:0.5rem 1.25rem; font-size:0.85rem;">
-            <i data-lucide="download" size="16"></i> Save to Device
+            <span>📥</span> Save to Device
           </a>
         </div>
       </div>
@@ -511,7 +496,7 @@
   </div>
 
   <!-- MAIN SCRIPT -->
-  <script type="module" src="script.js"></script>
+  <script defer src="script.js"></script>
 </body>
 
 </html>
