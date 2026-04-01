@@ -1,27 +1,4 @@
-/* Thiran Attendance Tracker - Firebase Enabled */
-import { 
-    db, doc, getDoc, setDoc, storage, ref, uploadString, getDownloadURL 
-} from './lib/firebase.js';
-
-// Wait for Firebase to be initialized (not strictly needed with module imports, but keeping for safety)
-function waitForFirebase() {
-    return new Promise((resolve) => {
-        if (db) resolve();
-        else {
-            let attempts = 0;
-            const checkInterval = setInterval(() => {
-                attempts++;
-                if (db) {
-                    clearInterval(checkInterval);
-                    resolve();
-                } else if (attempts > 50) {
-                    clearInterval(checkInterval);
-                    resolve();
-                }
-            }, 100);
-        }
-    });
-}
+/* Thiran Attendance Tracker - Local Persistence Mode */
 
 const EMPLOYEES_LIST = ['Mogesh', 'Hari Haran', 'Mukunthan', 'Prakathesh', 'Rahav V K', 'Lohidharani G S', 'Shaik Nabeela Rayees  ', 'Keerthana P S', 'Kanmani G', 'Navasri N', 'Akash M', 'Arpit kumar P', 'Supriya Jayam.B', 'Vishal M', 'Nisha', 'Sam'];
 
@@ -40,52 +17,33 @@ let isSyncing = false;
 
 async function loadData() {
     try {
-        if (!db) {
-            console.warn("Firebase not available, using offline mode");
-            return Promise.resolve();
-        }
-        
-        // Modular API: getDoc(doc(db, "collection", "doc"))
-        const docRef = doc(db, "app_state", "attendance_hub");
-        const snap = await getDoc(docRef);
-        
-        if (snap.exists()) {
-            const data = snap.data();
+        const savedData = localStorage.getItem('attendance_hub_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
             attendanceRecordsArray = data.attendance || [];
             tasksArray = data.tasks || [];
             conductedCount = data.conductedCount || 0;
-            console.log("✅ Firebase data loaded successfully");
-        } else {
-            console.log("ℹ️ No existing data in Firebase - starting fresh");
+            console.log("Local storage sync completed.");
         }
     } catch (err) {
-        console.error("❌ Firebase Load Error:", err);
+        console.error("Local Load Error:", err);
     }
     return Promise.resolve();
 }
 
 async function saveData() {
     if (isSyncing) return;
-    
+    isSyncing = true;
     try {
-        if (!db) {
-            console.warn("Firebase not available, skipping data save");
-            return;
-        }
-        
-        isSyncing = true;
-        // Modular API: setDoc(doc(db, "collection", "doc"), data)
-        const docRef = doc(db, "app_state", "attendance_hub");
-        await setDoc(docRef, {
+        localStorage.setItem('attendance_hub_data', JSON.stringify({
             attendance: attendanceRecordsArray,
             tasks: tasksArray,
             conductedCount: conductedCount,
             lastUpdated: new Date().toISOString()
-        });
-        console.log("✅ Data saved to Firebase");
+        }));
     } catch (err) {
-        console.error("❌ Firebase Save Error:", err);
-        notify("Sync Failed. Check Console.", "red");
+        console.error("Local Save Error:", err);
+        notify("Save Failed.", "red");
     } finally {
         isSyncing = false;
     }
@@ -93,94 +51,44 @@ async function saveData() {
 
 
 // INIT
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. INITIALIZE ICONS AND UI (Non-blocking)
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    updateClock();
-    setInterval(updateClock, 1000);
-    
-    // 1. WIRE UP LOGIN IMMEDIATELY (Highest Priority)
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.onsubmit = async (e) => {
-            e.preventDefault();
-            console.log("Login submitted...");
-            try {
-                const user = document.getElementById('username')?.value?.trim();
-                const pass = document.getElementById('password')?.value;
-
-                if (!user || !pass) return notify('Please fill all fields', 'red');
-
-                const cleanUser = user.toLowerCase();
-
-                // ADMIN LOGIN
-                if (cleanUser === 'thiran' && pass === 'admin@thiran') {
-                    currentUser = { name: 'Thiran MD', role: 'admin' };
-                    console.log("Admin login successful, showing admin view");
-                    await loadData();
-                    await showView('admin-view');
-                    notify('Logged in as Administrator', 'blue');
-                    return;
-                }
-
-                // EMPLOYEE LOGIN
-                const passCorrect = (pass === 'thiran*2026');
-                if (!passCorrect) return notify('Invalid password!', 'red');
-
-                const map = {
-                    'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
-                    'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
-                    'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P',
-                    'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M', 'nisha': 'Nisha', 'sam': 'Sam'
-                };
-
-                let matchedName = null;
-                if (map[cleanUser]) {
-                    matchedName = map[cleanUser];
-                } else {
-                    matchedName = EMPLOYEES_LIST.find(emp => emp.toLowerCase().trim() === cleanUser);
-                }
-
-                if (matchedName) {
-                    currentUser = { name: matchedName, role: 'employee' };
-                    const welcomeText = document.getElementById('welcome-text');
-                    if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
-                    console.log("Employee login successful, showing employee view");
-                    await loadData();
-                    await showView('employee-view');
-                    notify(`Welcome back, ${currentUser.name}!`, 'blue');
-                } else {
-                    notify('User not found! Try shorthand (e.g., "mogesh") or full name.', 'red');
-                }
-            } catch (err) {
-                console.error("Login error:", err);
-                notify('Login failed: ' + err.message, 'red');
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check for saved session
+    const savedUser = localStorage.getItem('thiran_session');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            if (currentUser.name === 'Thiran MD') {
+                showView('admin-view');
+            } else {
+                showView('employee-view');
+                const welcomeText = document.getElementById('welcome-text');
+                if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
             }
-        };
+        } catch (e) {
+            localStorage.removeItem('thiran_session');
+        }
+    } else {
+        showView('login-view');
     }
 
-    // 2. CONTINUE WITH UI SETUP
     updateClock();
     setInterval(updateClock, 1000);
-    
-    // Initial UI refresh
-    refreshUI(false).catch(err => console.error("Initial refreshUI failed:", err));
-    
-    // Periodic UI refresh
+
+    // Initial data setup
+    refreshUI(false);
+
+    // Frequent UI Refresh for clock/animations
     setInterval(() => {
-        if (currentUser) {
-            refreshUI(false).catch(err => console.error("Periodic refreshUI failed:", err));
-        }
+        refreshUI(false);
     }, 2000);
 
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+
 
     // wire up dropdown toggle
     const dropdownBtn = document.getElementById('emp-dropdown-btn');
     const dropdown = document.getElementById('emp-dropdown');
     if (dropdownBtn && dropdown) {
-        dropdownBtn.onclick = (e) => {
-            e.stopPropagation();
+        dropdownBtn.onclick = () => {
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         };
         // Close when clicking outside
@@ -260,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedTaskEmployees.clear();
                 updateTaskSelectedCount();
                 renderAdminTasks();
-                if (typeof lucide !== 'undefined') lucide.createIcons();
             };
 
             if (pdfFile) {
@@ -301,93 +208,110 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // INITIAL DATA FETCH (Background)
-    loadData().then(() => {
-        if (currentUser) refreshUI(false);
-    }).catch(err => {
-        console.error("Background load failed", err);
-    });
+    // INITIAL DATA FETCH
+    await loadData();
+    refreshUI(false);
 });
 
-async function refreshUI(shouldReload = false) {
-    try {
-        if (shouldReload) await loadData();
-        if (currentUser) {
-            if (currentUser.role === 'admin') {
-                if (document.getElementById('admin-view')) renderAdmin();
-            } else if (currentUser.role === 'employee') {
-                if (document.getElementById('employee-view')) renderEmployee();
-                if (document.getElementById('employee-tasks-view')) renderUserTasks();
-            }
-            if (document.getElementById('score-list-view')) renderScoreList();
-            if (document.getElementById('admin-tasks-view')) renderAdminTasks();
+function refreshUI(shouldReload = false) {
+    if (shouldReload) loadData();
+    if (currentUser) {
+        if (currentUser.role === 'admin') {
+            if (document.getElementById('admin-view')) renderAdmin();
+        } else if (currentUser.role === 'employee') {
+            if (document.getElementById('employee-view')) renderEmployee();
+            if (document.getElementById('employee-tasks-view')) renderUserTasks();
         }
-        try {
-            renderBoosterLeaderboard();
-        } catch (err) {
-            console.warn("renderBoosterLeaderboard error:", err);
-        }
-    } catch (err) {
-        console.error("UI Refresh Error:", err);
+        if (document.getElementById('score-list-view')) renderScoreList();
+        if (document.getElementById('admin-tasks-view')) renderAdminTasks();
+        renderBoosterLeaderboard();
     }
 }
 
-async function showView(viewId) {
+function showView(viewId) {
     try {
-        console.log("showView called with:", viewId);
-        
-        // Hide all views
         const views = document.querySelectorAll('.view');
-        console.log("Found views:", views.length);
-        views.forEach((v, idx) => {
+        views.forEach(v => {
             v.style.display = 'none';
             v.classList.remove('fade-in');
-            console.log(`Hidden view ${idx}:`, v.id);
         });
 
-        // Show target view
         const targetView = document.getElementById(viewId);
-        console.log("Target view element:", targetView);
-        
         if (targetView) {
-            const displayValue = (viewId === 'login-view') ? 'flex' : 'block';
-            targetView.style.display = displayValue;
-            targetView.style.visibility = 'visible';
-            targetView.style.opacity = '1';
+            targetView.style.display = (viewId === 'login-view') ? 'flex' : 'block';
             targetView.classList.add('fade-in');
-            console.log(`Showed view ${viewId} with display:${displayValue}`);
-            
-            // Refresh UI if user is logged in
-            if (currentUser) {
-                console.log("Current user:", currentUser);
-                await refreshUI();
-            }
-            
-            // Initialize icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-                console.log("Lucide icons created");
-            } else {
-                console.warn("Lucide not available");
-            }
-            return Promise.resolve();
-        } else {
-            console.error(`View ${viewId} not found in DOM`);
-            throw new Error(`View element with id '${viewId}' not found`);
+            refreshUI();
+
         }
     } catch (err) {
         console.error('CRITICAL: showView Failed', err);
-        throw err;
     }
 }
 
-// AUTH (Moved into DOMContentLoaded)
+// AUTH
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.onsubmit = (e) => {
+        e.preventDefault();
+        const user = document.getElementById('username')?.value?.trim();
+        const pass = document.getElementById('password')?.value;
+
+        if (!user || !pass) return notify('Please fill all fields', 'red');
+
+        // ADMIN LOGIN
+        if (user.toLowerCase() === 'thiran' && pass === 'admin@thiran') {
+            currentUser = { name: 'Thiran MD', role: 'admin' };
+            localStorage.setItem('thiran_session', JSON.stringify(currentUser));
+            notify('Logged in as Administrator', 'blue');
+            setTimeout(() => {
+                showView('admin-view');
+            }, 500);
+            return;
+        }
+
+        // EMPLOYEE LOGIN
+        const passCorrect = (pass === 'thiran*2026');
+        if (!passCorrect) return notify('Invalid password!', 'red');
+
+        const map = {
+            'mogesh': 'Mogesh', 'hari': 'Hari Haran', 'mukunthan': 'Mukunthan', 'prakathesh': 'Prakathesh',
+            'rahav': 'Rahav V K', 'lohith': 'Lohidharani G S', 'nabeela': 'Shaik Nabeela Rayees  ', 'keerthana': 'Keerthana P S',
+            'kanmani': 'Kanmani G', 'navasri': 'Navasri N', 'akash': 'Akash M', 'arpit': 'Arpit kumar P',
+            'supriya': 'Supriya Jayam.B', 'vishal': 'Vishal M', 'nisha': 'Nisha', 'sam': 'Sam'
+        };
+
+        const cleanUser = user.toLowerCase();
+        let matchedName = null;
+
+        // Try map first (shorthand)
+        if (map[cleanUser]) {
+            matchedName = map[cleanUser];
+        } else {
+            // Try direct match in EMPLOYEES_LIST
+            matchedName = EMPLOYEES_LIST.find(emp => emp.toLowerCase().trim() === cleanUser);
+        }
+
+        if (matchedName) {
+            currentUser = { name: matchedName, role: 'employee' };
+            localStorage.setItem('thiran_session', JSON.stringify(currentUser));
+            const welcomeText = document.getElementById('welcome-text');
+            if (welcomeText) welcomeText.innerText = `Hello, ${currentUser.name}`;
+            notify(`Welcome back, ${currentUser.name}!`, 'blue');
+            setTimeout(() => {
+                showView('employee-view');
+            }, 500);
+        } else {
+            notify('User not found! Try shorthand (e.g., "mogesh") or full name.', 'red');
+        }
+    };
+}
 
 function logout() {
     currentUser = null;
+    localStorage.removeItem('thiran_session');
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
-    showView('login-view').catch(err => console.error("Logout showView error:", err));
+    showView('login-view');
     // resetTracking(); // This was probably a mistake in the original script.js or defined later. I'll check.
     notify('Logged out successfully', 'blue');
 }
@@ -420,12 +344,11 @@ function calculateAttendanceScore(empName, count) {
 }
 
 function renderAdmin() {
-    try {
-        const head = document.getElementById('table-headers');
-        // ensure manual attendance select is populated each time admin view renders
-        populateManualAttendance();
-        const body = document.getElementById('table-body');
-        const presentCount = EMPLOYEES_LIST.filter(emp => attendanceRecordsArray.some(r => r.name === emp && r.sessionIndex === conductedCount)).length;
+    const head = document.getElementById('table-headers');
+    // ensure manual attendance select is populated each time admin view renders
+    populateManualAttendance();
+    const body = document.getElementById('table-body');
+    const presentCount = EMPLOYEES_LIST.filter(emp => attendanceRecordsArray.some(r => r.name === emp && r.sessionIndex === conductedCount)).length;
 
     if (head) {
         head.innerHTML = '<th class="sticky-col">Employee Name</th>';
@@ -461,78 +384,66 @@ function renderAdmin() {
     if (totalEmpEl) totalEmpEl.innerText = EMPLOYEES_LIST.length;
     if (avgPctEl) avgPctEl.innerText = Math.round(totalScore / EMPLOYEES_LIST.length) + '%';
     if (criticalEl) criticalEl.innerText = criticalCount;
-    } catch (err) {
-        console.error("renderAdmin error:", err);
-    }
 }
 
 // EMPLOYEE CORE
 function renderEmployee() {
-    try {
-        const strip = document.getElementById('progress-strip');
-        const hHead = document.getElementById('user-table-headers');
-        const hBody = document.getElementById('user-table-body');
+    const strip = document.getElementById('progress-strip');
+    const hHead = document.getElementById('user-table-headers');
+    const hBody = document.getElementById('user-table-body');
 
-        // Show attendance history for employees
-        const historySection = document.querySelector('#employee-view .table-container');
-        if (historySection) historySection.style.display = 'block';
-        
-        if (strip) {
-            const progressSection = strip.parentElement;
-            if (progressSection) progressSection.style.display = 'block';
-        }
+    // Show attendance history for employees
+    const historySection = document.querySelector('#employee-view .table-container');
+    if (historySection) historySection.style.display = 'block';
+    const progressSection = document.getElementById('progress-strip').parentElement;
+    if (progressSection) progressSection.style.display = 'block';
 
-        const myRecs = attendanceRecordsArray.filter(r => r.name === currentUser.name);
+    const myRecs = attendanceRecordsArray.filter(r => r.name === currentUser.name);
 
-        // Update User Percentage Badge
-        const score = calculateAttendanceScore(currentUser.name, conductedCount);
-        const badge = document.getElementById('user-pct-badge');
-        if (badge) {
-            badge.innerText = score + '%';
-            badge.style.color = score >= 80 ? '#22c55e' : (score >= 60 ? 'var(--primary)' : '#ef4444');
-        }
-
-        if (hHead && hBody) {
-            hHead.innerHTML = '<th class="sticky-col">Status Category</th>';
-            let bodyHtml = `<td class="sticky-col">Session Result</td>`;
-
-            for (let i = 0; i < 50; i++) {
-                hHead.innerHTML += `<th>Meet ${i + 1}</th>`;
-                const rec = myRecs.find(r => r.sessionIndex === i);
-                if (rec) bodyHtml += `<td><span class="badge-present">Present</span></td>`;
-                else if (i < conductedCount) bodyHtml += `<td><span class="badge-absent">Absent</span></td>`;
-                else bodyHtml += `<td><span style="opacity:0.1; color:var(--text-muted);">—</span></td>`;
-            }
-            hBody.innerHTML = `<tr>${bodyHtml}</tr>`;
-        }
-
-        if (strip) {
-            strip.innerHTML = '';
-            for (let i = 0; i < 50; i++) {
-                const rec = myRecs.find(r => r.sessionIndex === i);
-                let stateClass = '';
-                let iconContent = '';
-                if (rec) {
-                    stateClass = 'active';
-                    iconContent = '<i data-lucide="check-circle" size="20" color="#22d3ee"></i><span style="font-size:0.65rem; color:#22d3ee; font-weight:700">PRESENT</span>';
-                } else if (i < conductedCount) {
-                    iconContent = '<i data-lucide="x-circle" size="20" color="#f87171"></i><span style="font-size:0.65rem; color:#f87171; font-weight:700">ABSENT</span>';
-                } else {
-                    iconContent = '<i data-lucide="clock" size="20" style="opacity:0.3"></i><span style="font-size:0.65rem; opacity:0.3;">UPCOMING</span>';
-                }
-
-                strip.innerHTML += `
-                    <div class="progress-item ${stateClass}">
-                        <span style="font-size:0.7rem; font-weight:700; opacity:0.5;">MEET ${i + 1}</span>
-                        ${iconContent}
-                    </div>
-                `;
-            }
-        }
-    } catch (err) {
-        console.error("renderEmployee error:", err);
+    // Update User Percentage Badge
+    const score = calculateAttendanceScore(currentUser.name, conductedCount);
+    const badge = document.getElementById('user-pct-badge');
+    if (badge) {
+        badge.innerText = score + '%';
+        badge.style.color = score >= 80 ? '#22c55e' : (score >= 60 ? 'var(--primary)' : '#ef4444');
     }
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    if (hHead && hBody) {
+        hHead.innerHTML = '<th class="sticky-col">Status Category</th>';
+        let bodyHtml = `<td class="sticky-col">Session Result</td>`;
+
+        for (let i = 0; i < 50; i++) {
+            hHead.innerHTML += `<th>Meet ${i + 1}</th>`;
+            const rec = myRecs.find(r => r.sessionIndex === i);
+            if (rec) bodyHtml += `<td><span class="badge-present">Present</span></td>`;
+            else if (i < conductedCount) bodyHtml += `<td><span class="badge-absent">Absent</span></td>`;
+            else bodyHtml += `<td><span style="opacity:0.1; color:var(--text-muted);">—</span></td>`;
+        }
+        hBody.innerHTML = `<tr>${bodyHtml}</tr>`;
+    }
+
+    strip.innerHTML = '';
+    for (let i = 0; i < 50; i++) {
+        const rec = myRecs.find(r => r.sessionIndex === i);
+        let stateClass = '';
+        let iconContent = '';
+        if (rec) {
+            stateClass = 'active';
+            iconContent = '<span style="font-size:20px; color:#22d3ee">✅</span><span style="font-size:0.65rem; color:#22d3ee; font-weight:700">PRESENT</span>';
+        } else if (i < conductedCount) {
+            iconContent = '<span style="font-size:20px; color:#f87171">❌</span><span style="font-size:0.65rem; color:#f87171; font-weight:700">ABSENT</span>';
+        } else {
+            iconContent = '<span style="font-size:20px; opacity:0.3">⏰</span><span style="font-size:0.65rem; opacity:0.3;">UPCOMING</span>';
+        }
+
+        strip.innerHTML += `
+            <div class="progress-item ${stateClass}">
+                <span style="font-size:0.7rem; font-weight:700; opacity:0.5;">MEET ${i + 1}</span>
+                ${iconContent}
+            </div>
+        `;
+    }
+
 }
 
 function renderScoreList() {
@@ -825,24 +736,16 @@ function updateClock() {
 }
 
 function notify(text, color) {
-    if (typeof Toastify !== 'undefined') {
-        Toastify({ text, duration: 4000, gravity: "top", position: "right", style: { background: color === 'red' ? '#ef4444' : (color === 'green' ? '#22c55e' : '#6366f1'), borderRadius: '12px', padding: '12px 24px', fontWeight: '600' } }).showToast();
-    } else {
-        console.log(`NOTIFICATION (${color}): ${text}`);
-    }
+    Toastify({ text, duration: 4000, gravity: "top", position: "right", style: { background: color === 'red' ? '#ef4444' : (color === 'green' ? '#22c55e' : '#6366f1'), borderRadius: '12px', padding: '12px 24px', fontWeight: '600' } }).showToast();
 }
 
 // Password Eye Toggle
-const togglePasswordBtn = document.getElementById('toggle-password');
-if (togglePasswordBtn) {
-    togglePasswordBtn.onclick = function () {
-        const input = document.getElementById('password');
-        const isPass = input.type === 'password';
-        input.type = isPass ? 'text' : 'password';
-        this.innerHTML = isPass ? '<i data-lucide="eye-off" size="16"></i>' : '<i data-lucide="eye" size="16"></i>';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-}
+document.getElementById('toggle-password').onclick = function () {
+    const input = document.getElementById('password');
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    this.innerHTML = isPass ? '<span>🙈</span>' : '<span>👁️</span>';
+};
 
 // TASK MANAGEMENT LOGIC
 function renderAdminTasks() {
@@ -865,13 +768,13 @@ function renderAdminTasks() {
                     <div>
                         <span style="font-size:0.7rem; font-weight:800; color:var(--primary); text-transform:uppercase;">${task.week} · ${task.user}</span>
                         <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.5rem;">
-                            <i data-lucide="calendar" size="12"></i> ${task.fromDate} to ${task.tillDate}
+                            <span>📅</span> ${task.fromDate} to ${task.tillDate}
                         </div>
                         <h4 style="font-size:1.05rem; margin-top:0.25rem;">${task.text}</h4>
                         ${task.assignmentPdf ? `
                         <div style="margin-top: 0.75rem;">
                             <button onclick="openProof('${task.assignmentPdf}', '${task.assignmentPdfName}')" class="btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; height: auto;">
-                                <i data-lucide="file-text" size="14"></i> View Assignment PDF
+                                <span>📄</span> View Assignment PDF
                             </button>
                         </div>
                         ` : ''}
@@ -880,12 +783,12 @@ function renderAdminTasks() {
                 </div>
                 ${task.proof ? `
                     <div style="margin-top:1rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:0.5rem; border:1px dashed var(--card-border);">
-                        <p style="font-size:0.8rem; margin-bottom:0.75rem;"><i data-lucide="paperclip" size="14" style="vertical-align:middle;"></i> Proof Submitted: <b>${task.fileName}</b></p>
+                        <p style="font-size:0.8rem; margin-bottom:0.75rem;"><span>📎</span> Proof Submitted: <b>${task.fileName}</b></p>
                         ${task.proof.startsWith('data:image') ? `
                             <img src="${task.proof}" onclick="openProof('${task.proof}', '${task.fileName}')" style="max-width:100%; border-radius:0.5rem; border:1px solid var(--card-border); cursor:zoom-in; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                         ` : `
                             <div style="display:flex; align-items:center; gap:0.5rem; color:var(--primary); font-weight:600;">
-                                <i data-lucide="file-text" size="18"></i>
+                                <span>📄</span>
                                 <button onclick="openProof('${task.proof}', '${task.fileName}')" style="background:none; border:none; color:var(--primary); font-size:0.9rem; font-weight:600; text-decoration:underline; cursor:pointer; padding:0;">View Document Content</button>
                             </div>
                         `}
@@ -898,7 +801,7 @@ function renderAdminTasks() {
             </div>
         `;
     });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+
 }
 
 async function deleteTask(id) {
@@ -933,7 +836,7 @@ function renderUserTasks() {
                     <div>
                         <span style="background:rgba(99,102,241,0.1); padding:0.35rem 1rem; border-radius:2rem; font-size:0.8rem; font-weight:700; color:var(--primary);">${task.week}</span>
                         <span style="margin-left:1rem; font-size:0.8rem; font-weight:600; opacity:0.7;">
-                            <i data-lucide="user" size="14"></i> Assigned to: ${task.user}
+                            <span>👤</span> Assigned to: ${task.user}
                         </span>
                     </div>
                     <span class="${isSubmitted ? 'badge-present' : 'badge-absent'}">${isMine ? (isSubmitted ? 'Task Completed' : 'Pending Action') : ('Assignee: ' + task.user)}</span>
@@ -943,7 +846,7 @@ function renderUserTasks() {
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem;">
                   ${task.assignmentPdf ? `
                     <button onclick="openProof('${task.assignmentPdf}', '${task.assignmentPdfName}')" class="btn-outline" style="flex: 1; min-width: 200px; justify-content: center;">
-                        <i data-lucide="file-down" size="18"></i> Open Assignment PDF
+                        <span>📄</span> Open Assignment PDF
                     </button>
                   ` : ''}
                   
@@ -951,16 +854,16 @@ function renderUserTasks() {
                     <div style="flex: 2; min-width: 300px;">
                         <input type="file" id="file-${task.id}" style="display:none" onchange="handleSubmission(${task.id}, this)">
                         <button onclick="document.getElementById('file-${task.id}').click()" class="btn-primary" style="width:100%; justify-content:center;">
-                            <i data-lucide="upload-cloud" size="18"></i> Upload Proof (Photo/File)
+                            <span>📤</span> Upload Proof (Photo/File)
                         </button>
                     </div>
                   ` : (isMine && isSubmitted ? `
                     <div style="flex: 2; min-width: 300px; display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1.25rem; background:rgba(34, 197, 94, 0.05); border-radius:1rem; border:1px solid rgba(34, 197, 94, 0.15);">
                         <div style="color:#22c55e; display:flex; align-items:center; gap:0.5rem; font-weight:600; font-size: 0.9rem;">
-                            <i data-lucide="check-circle" size="18"></i> ${task.fileName} Received
+                            <span>✅</span> ${task.fileName} Received
                         </div>
                         <button onclick="deleteSubmission(${task.id})" class="btn-outline" style="border-color:#f87171; color:#f87171; padding:0.35rem 0.65rem; font-size:0.75rem; min-width:auto;">
-                            <i data-lucide="trash-2" size="14"></i>
+                            <span>🗑️</span>
                         </button>
                     </div>
                   ` : '')}
@@ -968,7 +871,7 @@ function renderUserTasks() {
             </div>
         `;
     });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+
 }
 
 async function handleSubmission(taskId, input) {
@@ -977,22 +880,16 @@ async function handleSubmission(taskId, input) {
 
     if (file.size > 5 * 1024 * 1024) return notify('File too large! Max 5MB.', 'red');
 
-    notify('Uploading proof to cloud...', 'blue');
+    notify('Saving proof...', 'blue');
     
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
-            // Upload to Firebase Storage
-            const storagePath = `proofs/${taskId}_${file.name}`;
-            const fileRef = ref(storage, storagePath);
-            await uploadString(fileRef, e.target.result, 'data_url');
-            const downloadURL = await getDownloadURL(fileRef);
-
             const task = tasksArray.find(t => t.id === taskId);
             if (task) {
                 task.status = 'Submitted';
                 task.completionTime = Date.now();
-                task.proof = downloadURL; // Store URL instead of heavy Base64
+                task.proof = e.target.result; // Store Base64 directly
                 task.fileName = file.name;
                 await saveData();
                 notify('Task submitted successfully!', 'green');
@@ -1000,8 +897,8 @@ async function handleSubmission(taskId, input) {
                 renderBoosterLeaderboard();
             }
         } catch (err) {
-            console.error("Upload Error:", err);
-            notify("File upload failed!", "red");
+            console.error("Save Error:", err);
+            notify("Submission failed!", "red");
         }
     };
     reader.onerror = () => notify('Error reading file!', 'red');
@@ -1042,17 +939,15 @@ async function handleSubmission(taskId, input) {
             content.innerHTML = `<embed src="${data}" type="application/pdf" width="100%" height="100%" style="border-radius:0.5rem;">`;
         } else {
             content.innerHTML = `
-            <div style="text-align:center; padding:3rem;">
-                <i data-lucide="file-text" size="64" style="color:var(--primary); margin-bottom:1.5rem;"></i>
-                <p style="font-size:1.1rem; font-weight:600;">This file format cannot be previewed directly.</p>
-                <p style="font-size:0.9rem; color:var(--text-muted); margin-top:0.5rem;">Please use the button below to download and view it.</p>
-            </div>
-        `;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+                <div style="padding:2rem; text-align:center;">
+                    <span style="font-size:3rem;">📄</span>
+                    <p style="margin-top:1rem;">Preview not available for this file type.</p>
+                </div>
+            `;
         }
 
         modal.style.display = 'flex';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+
     }
 
     function closeProof() {
@@ -1138,5 +1033,5 @@ async function handleSubmission(taskId, input) {
         if (adminList) adminList.innerHTML = tableHtml;
         if (userList) userList.innerHTML = tableHtml;
 
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+
     }
