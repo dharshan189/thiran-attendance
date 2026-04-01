@@ -93,10 +93,11 @@ async function saveData() {
 
 
 // INIT
-document.addEventListener('DOMContentLoaded', async () => {
-    // Wait for Firebase to be initialized first
-    console.log("Waiting for Firebase initialization...");
-    await waitForFirebase();
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. INITIALIZE ICONS AND UI (Non-blocking)
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    updateClock();
+    setInterval(updateClock, 1000);
     
     // 1. WIRE UP LOGIN IMMEDIATELY (Highest Priority)
     const loginForm = document.getElementById('login-form');
@@ -300,13 +301,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // INITIAL DATA FETCH - MOVED UP
-    try {
-        await loadData();
-        refreshUI(false);
-    } catch (err) {
-        console.error("Initial load/refresh failed", err);
-    }
+    // INITIAL DATA FETCH (Background)
+    loadData().then(() => {
+        if (currentUser) refreshUI(false);
+    }).catch(err => {
+        console.error("Background load failed", err);
+    });
 });
 
 async function refreshUI(shouldReload = false) {
