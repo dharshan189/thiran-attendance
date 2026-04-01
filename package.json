@@ -1,19 +1,16 @@
 {
   "name": "attendance-tracker",
   "version": "1.0.0",
-  "description": "",
+  "description": "Thiran Smart Hub - Attendance Matrix Tracker",
   "scripts": {
+    "dev": "npx http-server -p 3000 -c-1",
+    "build": "echo 'Static site - no build needed'",
+    "start": "npx http-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["attendance", "tracker", "firebase"],
+  "author": "Thiran",
   "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.101.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "pg": "^8.20.0"
-  }
+  "dependencies": {}
 }
+
