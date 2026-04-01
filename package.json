@@ -8,7 +8,6 @@
     "start": "npx http-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["attendance", "tracker", "firebase"],
   "keywords": [
     "attendance",
     "tracker",
@@ -17,7 +16,4 @@
   "author": "Thiran",
   "license": "ISC",
   "dependencies": {}
-  "dependencies": {
-    "@vercel/postgres": "^0.10.0"
-  }
 }
