@@ -7,10 +7,42 @@
   <title>Thiran Smart Hub</title>
   <link rel="stylesheet" href="index.css">
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <!-- Toastify Notifications -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.js"></script>
+  <!-- Firebase SDK (Compat version for easier CDN loading) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
+  <!-- Firebase Initialization -->
+  <script>
+    // Initialize Firebase with compat API
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3eQP96L1EmleBx8gcvKcMxYoFQsa2Qe0",
+      authDomain: "thiransmartconnect.firebaseapp.com",
+      projectId: "thiransmartconnect",
+      storageBucket: "thiransmartconnect.firebasestorage.app",
+      messagingSenderId: "851500836976",
+      appId: "1:851500836976:web:67ef9c8a50449cc5b32cb5",
+      measurementId: "G-19JEY3TE2L"
+    };
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("✅ Firebase app initialized");
+      
+      // Get compat instances - these return Firestore and Storage instances
+      window.db = firebase.firestore();
+      window.storage = firebase.storage();
+      
+      window.firebaseReady = true;
+      console.log("✅ Firebase ready - db and storage available");
+    } catch (err) {
+      console.error("❌ Firebase error:", err);
+      window.firebaseReady = false;
+    }
+  </script>
 </head>
 
 <body>
@@ -39,7 +71,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(99, 102, 241, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--primary);">
-                <i data-lucide="shield-check" size="20"></i>
+                <i data-lucide="fingerprint" size="20"></i>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Secure Verification</h4>
@@ -50,7 +82,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(34, 211, 238, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--secondary);">
-                <i data-lucide="zap" size="20"></i>
+                <i data-lucide="activity" size="20"></i>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem
@@ -62,7 +94,7 @@
             <div style="display: flex; align-items: flex-start; gap: 1rem;">
               <div
                 style="background: rgba(244, 114, 182, 0.2); padding: 0.5rem; border-radius: 0.75rem; color: var(--accent);">
-                <i data-lucide="bar-chart-3" size="20"></i>
+                <i data-lucide="layers" size="20"></i>
               </div>
               <div>
                 <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Automated Analytics</h4>
@@ -84,9 +116,9 @@
               <label
                 style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Username</label>
               <div style="position: relative;">
-                <i data-lucide="users" size="16"
+                <i data-lucide="user" size="16"
                   style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                <input type="text" id="username" class="input-field" placeholder="Enter your Username"
+                <input type="text" id="username" name="username" autocomplete="username" class="input-field" placeholder="Enter your Username"
                   style="padding-left: 2.75rem; font-size: 0.9rem;" required>
               </div>
             </div>
@@ -96,7 +128,7 @@
               <div style="position: relative;">
                 <i data-lucide="lock" size="16"
                   style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                <input type="password" id="password" class="input-field" placeholder="Enter your Password"
+                <input type="password" id="password" name="password" autocomplete="current-password" class="input-field" placeholder="Enter your Password"
                   style="padding-left: 2.75rem; padding-right: 3rem; font-size: 0.9rem;" required>
                 <button type="button" id="toggle-password"
                   style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">
@@ -106,7 +138,7 @@
             </div>
             <button type="submit" class="btn-primary"
               style="width: 100%; justify-content: center; height: 3.25rem; font-size: 1rem;">
-              <i data-lucide="log-in" size="18" style="margin-right: 0.5rem;"></i> Access Workspace
+              <i data-lucide="key" size="18" style="margin-right: 0.5rem;"></i> Access Workspace
             </button>
           </form>
           <p style="margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">By accessing,
@@ -141,11 +173,11 @@
           </div>
           <button onclick="showView('score-list-view')" class="btn-primary"
             style="background: rgba(34, 211, 238, 0.1); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.2); box-shadow: none;">
-            <i data-lucide="award" size="18"></i>Attendance Performance
+            <i data-lucide="medal" size="18"></i>Attendance Performance
           </button>
           <button onclick="showView('admin-tasks-view')" class="btn-primary"
             style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
-            <i data-lucide="clipboard-list" size="18"></i> Task Management
+            <i data-lucide="package" size="18"></i> Task Management
           </button>
           <button onclick="resetMatrix()" class="btn-outline"
             style="border-color: #ef4444; color: #ef4444; font-weight: 600;">
@@ -205,8 +237,9 @@
         style="padding:1.5rem; margin-bottom:2rem; position: relative; z-index: 100;">
         <h4 style="margin-bottom:1rem; font-size:1.1rem; font-weight:600;">Manual Attendance</h4>
         <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">
-          <input type="number" id="manual-meet-index" class="input-field" placeholder="Meeting #" min="1" max="50"
-            style="width:100px;">
+          <select id="manual-meet-index" class="input-field" style="width:180px;">
+            <!-- Meeting options 1-100 will be injected via JS -->
+          </select>
           <button id="mark-present-btn" class="btn-primary">Mark Present</button>
           <button id="mark-absent-btn" class="btn-outline">Mark Absent</button>
           <div style="position: relative; margin-left: auto;">
@@ -499,7 +532,7 @@
   </div>
 
   <!-- MAIN SCRIPT -->
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 
 </html>
