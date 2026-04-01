@@ -1,24 +1,25 @@
 /* Thiran Attendance Tracker - Firebase Enabled */
-// Firebase functions will be available globally from index.html initialization
+import { 
+    db, doc, getDoc, setDoc, storage, ref, uploadString, getDownloadURL 
+} from './lib/firebase.js';
 
-// Wait for Firebase to be initialized
+// Wait for Firebase to be initialized (not strictly needed with module imports, but keeping for safety)
 function waitForFirebase() {
     return new Promise((resolve) => {
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-            attempts++;
-            
-            // Check if Firebase is ready (compat API)
-            if (window.firebaseReady && window.db) {
-                clearInterval(checkInterval);
-                console.log("✅ Firebase is now ready!");
-                resolve();
-            } else if (attempts > 100) {  // 10 seconds (100 * 100ms)
-                clearInterval(checkInterval);
-                console.warn("⚠️ Firebase initialization timeout - using offline mode");
-                resolve();
-            }
-        }, 100);
+        if (db) resolve();
+        else {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (db) {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts > 50) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        }
     });
 }
 
@@ -39,17 +40,16 @@ let isSyncing = false;
 
 async function loadData() {
     try {
-        // Wait for Firebase to be initialized
-        await waitForFirebase();
-        
-        if (!window.db) {
+        if (!db) {
             console.warn("Firebase not available, using offline mode");
             return Promise.resolve();
         }
         
-        // Using compat API: db.collection().doc().get()
-        const snap = await window.db.collection("app_state").doc("attendance_hub").get();
-        if (snap.exists) {
+        // Modular API: getDoc(doc(db, "collection", "doc"))
+        const docRef = doc(db, "app_state", "attendance_hub");
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
             const data = snap.data();
             attendanceRecordsArray = data.attendance || [];
             tasksArray = data.tasks || [];
@@ -68,17 +68,15 @@ async function saveData() {
     if (isSyncing) return;
     
     try {
-        // Wait for Firebase to be initialized
-        await waitForFirebase();
-        
-        if (!window.db) {
+        if (!db) {
             console.warn("Firebase not available, skipping data save");
             return;
         }
         
         isSyncing = true;
-        // Using compat API: db.collection().doc().set()
-        await window.db.collection("app_state").doc("attendance_hub").set({
+        // Modular API: setDoc(doc(db, "collection", "doc"), data)
+        const docRef = doc(db, "app_state", "attendance_hub");
+        await setDoc(docRef, {
             attendance: attendanceRecordsArray,
             tasks: tasksArray,
             conductedCount: conductedCount,
@@ -986,9 +984,9 @@ async function handleSubmission(taskId, input) {
         try {
             // Upload to Firebase Storage
             const storagePath = `proofs/${taskId}_${file.name}`;
-            const fileRef = window.ref(window.storage, storagePath);
-            await window.uploadString(fileRef, e.target.result, 'data_url');
-            const downloadURL = await window.getDownloadURL(fileRef);
+            const fileRef = ref(storage, storagePath);
+            await uploadString(fileRef, e.target.result, 'data_url');
+            const downloadURL = await getDownloadURL(fileRef);
 
             const task = tasksArray.find(t => t.id === taskId);
             if (task) {
