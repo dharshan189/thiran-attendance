@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+.DS_Store
+
+# Dev tools
+.env
+.agents/
+.claude/
+.vscode/
+.editorconfig
+skills-lock.json
+
+# Local project states
+.firebase/
+.firebaserc
+firebase.json
+api/
+state.js
