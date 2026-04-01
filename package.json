@@ -9,8 +9,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["attendance", "tracker", "firebase"],
+  "keywords": [
+    "attendance",
+    "tracker",
+    "firebase"
+  ],
   "author": "Thiran",
   "license": "ISC",
   "dependencies": {}
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0"
+  }
 }
-
