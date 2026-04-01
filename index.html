@@ -11,37 +11,16 @@
   <!-- Toastify Notifications -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.js"></script>
-  <!-- Firebase SDK (Compat version for easier CDN loading) -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
-  <!-- Firebase Initialization -->
-  <script>
-    // Initialize Firebase with compat API
-    const firebaseConfig = {
-      apiKey: "AIzaSyA3eQP96L1EmleBx8gcvKcMxYoFQsa2Qe0",
-      authDomain: "thiransmartconnect.firebaseapp.com",
-      projectId: "thiransmartconnect",
-      storageBucket: "thiransmartconnect.firebasestorage.app",
-      messagingSenderId: "851500836976",
-      appId: "1:851500836976:web:67ef9c8a50449cc5b32cb5",
-      measurementId: "G-19JEY3TE2L"
-    };
-
-    try {
-      firebase.initializeApp(firebaseConfig);
-      console.log("✅ Firebase app initialized");
-      
-      // Get compat instances - these return Firestore and Storage instances
-      window.db = firebase.firestore();
-      window.storage = firebase.storage();
-      
-      window.firebaseReady = true;
-      console.log("✅ Firebase ready - db and storage available");
-    } catch (err) {
-      console.error("❌ Firebase error:", err);
-      window.firebaseReady = false;
-    }
+  <!-- Firebase SDK (Modular) -->
+  <script type="module">
+    import { db, storage, ref, uploadString, getDownloadURL } from './lib/firebase.js';
+    window.db = db;
+    window.storage = storage;
+    window.ref = ref;
+    window.uploadString = uploadString;
+    window.getDownloadURL = getDownloadURL;
+    window.firebaseReady = true;
+    console.log("✅ Firebase initialized via modular lib");
   </script>
 </head>
 
@@ -532,7 +511,7 @@
   </div>
 
   <!-- MAIN SCRIPT -->
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 
 </html>
