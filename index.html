@@ -84,7 +84,8 @@
               <label
                 style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Username</label>
               <div style="position: relative;">
-                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">👥</span>
+                <span
+                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">👥</span>
                 <input type="text" id="username" class="input-field" placeholder="Enter your Username"
                   style="padding-left: 2.75rem; font-size: 0.9rem;" required>
               </div>
@@ -93,7 +94,8 @@
               <label
                 style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Password</label>
               <div style="position: relative;">
-                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔒</span>
+                <span
+                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔒</span>
                 <input type="password" id="password" class="input-field" placeholder="Enter your Password"
                   style="padding-left: 2.75rem; padding-right: 3rem; font-size: 0.9rem;" required>
                 <button type="button" id="toggle-password"
@@ -313,7 +315,8 @@
               <div style="position: relative;">
                 <input type="file" id="task-assignment-pdf" class="input-field" accept="application/pdf"
                   style="padding-left: 3rem;">
-                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">📄</span>
+                <span
+                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">📄</span>
               </div>
             </div>
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
@@ -495,8 +498,11 @@
 
   </div>
 
-  <!-- MAIN SCRIPT -->
- <script type="module" src="script.js"></script>
+  <!-- Supabase CDN (ADD THIS LINE) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <!-- Your script -->
+  <script src="script.js"></script>
 </body>
 
 </html>
