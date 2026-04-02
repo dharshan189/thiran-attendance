@@ -1,5 +1,5 @@
 // ================== SUPABASE SETUP ==================
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
 
 const supabaseUrl = 'https://samuyhnccbblehzqhmqb.supabase.co'
 const supabaseKey = 'sb_publishable_-IGbDnjMiurLnF4s1-LIrg_hCp7R_J7'
