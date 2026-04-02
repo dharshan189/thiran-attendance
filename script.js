@@ -4,8 +4,7 @@
 const supabaseUrl = 'https://samuyhnccbblehzqhmqb.supabase.co'
 const supabaseKey = 'sb_publishable_-IGbDnjMiurLnF4s1-LIrg_hCp7R_J7'
 
-const supabase = createClient(supabaseUrl, supabaseKey)
-
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 // ================== GLOBAL VARIABLES ==================
 let attendanceRecordsArray = []
