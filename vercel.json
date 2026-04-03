@@ -1,32 +1,13 @@
 {
-  "version": 2,
-  "public": true,
-  "buildCommand": "",
-  "outputDirectory": ".",
   "headers": [
     {
-      "source": "/lib/(.*)",
+      "source": "/:path*",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=3600"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0"
-        }
-      ]
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(?!.*\\.(?:js|css|jpg|png|gif|svg|ico|woff|woff2)$).*",
-      "dest": "/index.html"
     }
   ]
 }
