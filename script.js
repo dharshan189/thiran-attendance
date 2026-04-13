@@ -291,13 +291,25 @@ async function submitTaskFile(taskId, file) {
 
 
 function employeeScorePercent(empName) {
-    let score = 100
-    let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0))
+    let score = 100;
+    let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0));
+    let hasBeenAbsent = false;
+    
     for (let i = 0; i <= maxSession; i++) {
-        const rec = attendanceRecordsArray.find(r => r.name === empName && r.sessionIndex === i)
-        if (rec && rec.status === "Absent") score -= 6
+        const rec = attendanceRecordsArray.find(r => r.name === empName && r.sessionIndex === i);
+        if (rec) {
+            if (rec.status === "Absent") {
+                score -= 6;
+                hasBeenAbsent = true;
+            } else if (rec.status === "Present" && hasBeenAbsent) {
+                score += 2.5;
+            }
+        }
     }
-    return score
+    
+    // Ensure score is clamped between 0 and 100 and clean up decimals
+    const finalScore = Math.max(0, Math.min(100, score));
+    return Number.isInteger(finalScore) ? finalScore : parseFloat(finalScore.toFixed(1));
 }
 
 
