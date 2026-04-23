@@ -19,7 +19,7 @@ const ALL_EMPLOYEES = [
     { name: "Navasri N", username: "navasri" },
     { name: "Arpit Kumar", username: "arpit" },
     { name: "Akash M", username: "akash" },
-    { name: "Supriya Jayam B", username: "supriya" },
+    { name: "Brundavanam Bose", username: "bose" },
     { name: "Nishanthini S", username: "nishanthini" },
     { name: "Samuel Ignatius", username: "samuel" }
 ];
