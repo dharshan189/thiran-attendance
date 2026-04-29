@@ -7,21 +7,21 @@ const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 // ================== GLOBAL VARIABLES ==================
 const ALL_EMPLOYEES = [
-    { name: "Hari Haran V", username: "hari" },
-    { name: "Mukunthan S", username: "mukunthan" },
-    { name: "Mogesh J", username: "mogesh" },
-    { name: "Shaik Nabeela Rayees", username: "shaik" },
-    { name: "P S Keerthana", username: "keerthana" },
-    { name: "Rahav V K", username: "rahav" },
-    { name: "Prakathesh C", username: "prakathesh" },
-    { name: "Lohidharani G S", username: "lohidharani" },
-    { name: "Kanmani G", username: "kanmani" },
-    { name: "Navasri N", username: "navasri" },
-    { name: "Arpit Kumar", username: "arpit" },
-    { name: "Akash M", username: "akash" },
-    { name: "Brundavanam Bose", username: "bose" },
-    { name: "Nishanthini S", username: "nishanthini" },
-    { name: "Samuel Ignatius", username: "samuel" }
+    { name: "Lohidharani G S", username: "lohidharani", role: "HR Admin, Student Community Manager" },
+    { name: "Brundavanam Bose", username: "bose", role: "Project Manager" },
+    { name: "Mukunthan S", username: "mukunthan", role: "Ui/UX Designer" },
+    { name: "Akash M", username: "akash", role: "Digital Media Manager" },
+    { name: "Prakathesh C", username: "prakathesh", role: "Frontend Developer" },
+    { name: "Kanmani G", username: "kanmani", role: "Quality Assurance Tester" },
+    { name: "Shaik Nabeela Rayees", username: "shaik", role: "Backend Developer" },
+    { name: "Arpit Kumar", username: "arpit", role: "Business Development manager" },
+    { name: "P S Keerthana", username: "keerthana", role: "AI/ML Developer" },
+    { name: "Mogesh J", username: "mogesh", role: "Data Analyst" },
+    { name: "Navasri N", username: "navasri", role: "Content & Communication manager" },
+    { name: "Nishanthini S", username: "nishanthini", role: "Event Coordinator" },
+    { name: "Rahav V K", username: "rahav", role: "Product manager" },
+    { name: "Samuel Ignatius", username: "samuel", role: "Junior Fullsatck developer" },
+    { name: "Hari Haran V", username: "hari", role: "Research & Development Manager" }
 ];
 
 let attendanceRecordsArray = []
@@ -108,9 +108,9 @@ async function loadBoosterPositionsFromServer() {
         return
     }
     boosterPositionsCache = {}
-    ;(data || []).forEach(row => {
-        boosterPositionsCache[row.name] = row.sort_order
-    })
+        ; (data || []).forEach(row => {
+            boosterPositionsCache[row.name] = row.sort_order
+        })
 }
 
 
@@ -294,7 +294,7 @@ function employeeScorePercent(empName) {
     let score = 100;
     let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0));
     let hasBeenAbsent = false;
-    
+
     for (let i = 0; i <= maxSession; i++) {
         const rec = attendanceRecordsArray.find(r => r.name === empName && r.sessionIndex === i);
         if (rec) {
@@ -306,7 +306,7 @@ function employeeScorePercent(empName) {
             }
         }
     }
-    
+
     // Ensure score is clamped between 0 and 100 and clean up decimals
     const finalScore = Math.max(0, Math.min(100, score));
     return Number.isInteger(finalScore) ? finalScore : parseFloat(finalScore.toFixed(1));
@@ -321,7 +321,7 @@ function renderMatrix() {
 
     let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0))
 
-    let htmlHeader = "<th>Employee Name</th>"
+    let htmlHeader = "<th>Employee Name</th><th>Role</th>"
     for (let i = 0; i <= maxSession; i++) htmlHeader += `<th>Session ${i + 1}</th>`
     htmlHeader += "<th>Performance %</th>"
     headers.innerHTML = htmlHeader
@@ -330,7 +330,7 @@ function renderMatrix() {
     ALL_EMPLOYEES.forEach(empObj => {
         let emp = empObj.name
         let score = employeeScorePercent(emp)
-        let rowHtml = `<td>${emp}</td>`
+        let rowHtml = `<td>${emp}</td><td><span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(empObj.role || '')}</span></td>`
         for (let i = 0; i <= maxSession; i++) {
             const rec = attendanceRecordsArray.find(r => r.name === emp && r.sessionIndex === i)
             if (rec && rec.status === "Present") {
@@ -433,6 +433,8 @@ async function refreshEmployeeDashboard() {
     if (currentRole !== "employee" || !currentUser) return
     const badge = document.getElementById("user-pct-badge")
     if (badge) badge.innerText = `${employeeScorePercent(currentUser)}%`
+    const ptsBadge = document.getElementById("user-pts-badge")
+    if (ptsBadge) ptsBadge.innerText = getSessionBreakdown(currentUser).pts
     await loadBoosterPositionsFromServer()
     renderEmployeeAttendance()
     renderBoosterTables()
@@ -497,7 +499,10 @@ function buildBoosterTableHtml(highlightName) {
         const rowClass = isYou ? 'booster-row-self' : ''
         rows += `<tr class="${rowClass}">
             <td class="booster-pos">${idx + 1}</td>
-            <td class="booster-team">${escapeHtml(emp.name)}</td>
+            <td class="booster-team">
+                <div style="font-weight:700;">${escapeHtml(emp.name)}</div>
+                <div style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">${escapeHtml(emp.role || '')}</div>
+            </td>
             <td class="booster-num">${P}</td>
             <td class="booster-num">${W}</td>
             <td class="booster-num">${L}</td>
@@ -529,49 +534,100 @@ function buildBoosterTableHtml(highlightName) {
 
 
 function renderBoosterTables() {
-    const adminEl = document.getElementById('admin-booster-list')
-    const userEl = document.getElementById('user-booster-list')
-    if (adminEl) adminEl.innerHTML = buildBoosterTableHtml(null)
-    const highlight = currentRole === 'employee' ? currentUser : null
-    if (userEl) userEl.innerHTML = buildBoosterTableHtml(highlight)
+    const mainEl = document.getElementById('main-booster-list')
+    if (mainEl) {
+        const highlight = currentRole === 'employee' ? currentUser : null
+        mainEl.innerHTML = buildBoosterTableHtml(highlight)
+    }
 }
 
 
 function renderAdminBoosterEditorPanel() {
-    const el = document.getElementById('admin-booster-editor')
-    if (!el) return
+    const container = document.getElementById('admin-booster-editor')
+    if (!container) return
     if (currentRole !== 'admin') {
-        el.innerHTML = ''
-        el.style.display = 'none'
+        container.style.display = 'none'
         return
     }
-    el.style.display = 'block'
+    container.style.display = 'block'
+    
     if (!adminBoosterDraftOrder) {
         adminBoosterDraftOrder = getOrderedEmployees().map(e => e.name)
     }
-    let html = `<div style="padding: 1.25rem 1.5rem;">
-        <h4 style="margin-bottom: 0.35rem; font-size: 1.05rem; font-weight: 700;">Set table position (admin only)</h4>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.45;">Employees cannot change this. Use ↑ / ↓ to reorder who appears first in the booster table, then <strong>Save order</strong>. Everyone sees the same order.</p>
-        <ul class="booster-order-list">`
-    adminBoosterDraftOrder.forEach((name, i) => {
-        const safe = escapeHtml(name)
-        const upDis = i === 0 ? 'disabled' : ''
-        const downDis = i === adminBoosterDraftOrder.length - 1 ? 'disabled' : ''
-        html += `<li class="booster-order-item">
-            <span class="booster-order-name">${safe}</span>
-            <span class="booster-order-actions">
-                <button type="button" class="btn-outline booster-order-btn" onclick="boosterMoveOrder(${i}, -1)" ${upDis}>↑</button>
-                <button type="button" class="btn-outline booster-order-btn" onclick="boosterMoveOrder(${i}, 1)" ${downDis}>↓</button>
-            </span>
-        </li>`
-    })
-    html += `</ul>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-            <button type="button" class="btn-primary" onclick="saveBoosterOrder()">Save order</button>
-            <button type="button" class="btn-outline" onclick="resetBoosterOrderDraft()">Reset draft to A–Z</button>
+
+    const listHtml = adminBoosterDraftOrder.map((name, idx) => {
+        return `<div class="booster-editor-row" 
+                     draggable="true" 
+                     data-index="${idx}"
+                     style="display:flex; justify-content:space-between; align-items:center; padding:0.85rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.05); cursor:grab; background:rgba(255,255,255,0.02);">
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <span style="color:var(--text-muted); font-size:0.8rem; font-family:monospace; width:20px;">${idx + 1}</span>
+              <span style="font-weight:600;">${name}</span>
+            </div>
+            <span style="color:var(--text-muted); font-size:1.2rem;">⋮⋮</span>
+        </div>`
+    }).join('')
+
+    container.innerHTML = `
+        <div style="padding:1.25rem; background:rgba(251, 191, 36, 0.05); border-bottom:1px solid rgba(251, 191, 36, 0.1); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h4 style="margin:0; color:#fbbf24; font-size:1.1rem; font-weight:700;">Reorder League Standings</h4>
+            <p style="margin:0.25rem 0 0 0; font-size:0.8rem; color:var(--text-muted);">Drag and drop names to adjust positions</p>
+          </div>
+          <div style="display:flex; gap:0.75rem;">
+            <button onclick="resetBoosterOrderDraft()" class="btn-outline" style="padding:0.5rem 1rem; font-size:0.85rem; border-color:rgba(255,255,255,0.1);">Reset</button>
+            <button onclick="saveBoosterOrder()" class="btn-primary" style="padding:0.5rem 1.25rem; font-size:0.85rem; background:#fbbf24; color:#000;">Save New Order</button>
+          </div>
         </div>
-    </div>`
-    el.innerHTML = html
+        <div id="booster-drag-list" style="max-height:400px; overflow-y:auto;">
+          ${listHtml}
+        </div>
+    `
+
+    const rows = container.querySelectorAll('.booster-editor-row')
+    rows.forEach(row => {
+        row.addEventListener('dragstart', handleBoosterDragStart)
+        row.addEventListener('dragover', handleBoosterDragOver)
+        row.addEventListener('drop', handleBoosterDrop)
+        row.addEventListener('dragend', handleBoosterDragEnd)
+    })
+}
+
+let draggedIdx = null
+
+function handleBoosterDragStart(e) {
+    draggedIdx = parseInt(this.getAttribute('data-index'))
+    this.style.opacity = '0.4'
+    e.dataTransfer.effectAllowed = 'move'
+}
+
+function handleBoosterDragOver(e) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    const targetRow = e.target.closest('.booster-editor-row')
+    if (targetRow) {
+        targetRow.style.borderTop = '2px solid #fbbf24'
+    }
+}
+
+function handleBoosterDragEnd(e) {
+    this.style.opacity = '1'
+    const rows = document.querySelectorAll('.booster-editor-row')
+    rows.forEach(row => row.style.borderTop = '')
+}
+
+function handleBoosterDrop(e) {
+    e.preventDefault()
+    const targetRow = e.target.closest('.booster-editor-row')
+    if (!targetRow) return
+    
+    const targetIdx = parseInt(targetRow.getAttribute('data-index'))
+    if (draggedIdx === targetIdx) return
+
+    const item = adminBoosterDraftOrder.splice(draggedIdx, 1)[0]
+    adminBoosterDraftOrder.splice(targetIdx, 0, item)
+    
+    renderAdminBoosterEditorPanel()
 }
 
 
@@ -580,7 +636,7 @@ function boosterMoveOrder(index, delta) {
     const arr = [...adminBoosterDraftOrder]
     const j = index + delta
     if (j < 0 || j >= arr.length) return
-    ;[arr[index], arr[j]] = [arr[j], arr[index]]
+        ;[arr[index], arr[j]] = [arr[j], arr[index]]
     adminBoosterDraftOrder = arr
     renderAdminBoosterEditorPanel()
 }
@@ -743,6 +799,15 @@ function showView(viewId) {
     if (view) {
         view.style.display = viewId === 'login-view' ? 'flex' : 'block'
     }
+    
+    // Auto-render logic for specific views
+    if (viewId === 'booster-league-view') {
+        renderBoosterTables()
+        renderAdminBoosterEditorPanel()
+    }
+    if (viewId === 'admin-tasks-view') {
+        renderAdminTaskList()
+    }
 }
 
 
@@ -754,6 +819,13 @@ function logout() {
     const form = document.getElementById('login-form')
     if (form) form.reset()
     renderAdminBoosterEditorPanel()
+
+    // Reset sidebar state
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+
     if (typeof Toastify !== 'undefined') Toastify({ text: "Logged out", style: { background: "blue" } }).showToast()
 }
 
@@ -1116,6 +1188,13 @@ function initUI() {
             currentRole = 'admin'
             adminBoosterDraftOrder = null
             await loadBoosterPositionsFromServer()
+
+            // Sidebar links
+            const adminLinks = document.getElementById('admin-nav-links')
+            const empLinks = document.getElementById('employee-nav-links')
+            if (adminLinks) adminLinks.style.display = 'flex'
+            if (empLinks) empLinks.style.display = 'none'
+
             showView('admin-view')
             renderAdmin()
             if (typeof Toastify !== 'undefined') Toastify({ text: "Admin Login Successful", style: { background: "green" } }).showToast()
@@ -1126,8 +1205,17 @@ function initUI() {
         if (validEmp && pass === 'thiran*2026') {
             currentUser = validEmp.name
             currentRole = 'employee'
+
+            // Sidebar links
+            const adminLinks = document.getElementById('admin-nav-links')
+            const empLinks = document.getElementById('employee-nav-links')
+            if (adminLinks) adminLinks.style.display = 'none'
+            if (empLinks) empLinks.style.display = 'flex'
+
             const welcomeText = document.getElementById('welcome-text')
             if (welcomeText) welcomeText.innerText = `Hello, ${validEmp.name}`
+            const welcomeRole = document.getElementById('welcome-role')
+            if (welcomeRole) welcomeRole.innerText = validEmp.role || ''
             showView('employee-view')
             await refreshEmployeeDashboard()
             if (typeof Toastify !== 'undefined') Toastify({ text: `Welcome ${validEmp.name}`, style: { background: "green" } }).showToast()
@@ -1176,6 +1264,28 @@ async function openEmployeeDashboard() {
     showView('employee-view')
 }
 
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+function scrollToBooster() {
+    const el = document.getElementById('employee-booster-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goBackFromBooster() {
+    if (currentRole === 'admin') showView('admin-view')
+    else showView('employee-view')
+}
+
+window.toggleSidebar = toggleSidebar
+window.scrollToBooster = scrollToBooster
+window.goBackFromBooster = goBackFromBooster
 window.openEmployeeDashboard = openEmployeeDashboard
 
 
