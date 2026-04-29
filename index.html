@@ -56,8 +56,7 @@
                 <span>⚡</span>
               </div>
               <div>
-                <h4 style="font-weight: 600; margin-bottom: 0.25rem
-                ;">In-Memory Matrix</h4>
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">In-Memory Matrix</h4>
 
               </div>
             </div>
@@ -129,35 +128,25 @@
     <!-- ADMIN VIEW -->
     <div id="admin-view" class="view" style="display: none; padding: 2rem; max-width: 1400px; margin: auto;">
       <header class="header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3.5rem; gap: 2.5rem;">
-        <div style="display: flex; align-items: center; gap: 2rem;">
-          <div
-            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3.5rem; padding: 1rem 0; border-bottom: 1px solid var(--card-border);">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div
+              style="width: 42px; height: 42px; background: white; border-radius: 50%; padding: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Admin Dashboard</h1>
           </div>
-          <h1 style="font-size: 1.85rem; font-weight: 700;">Admin Dashboard</h1>
         </div>
-        <div style="display: flex; gap: 1.75rem; align-items: center;">
-          <div class="clock-widget" style="margin-right: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+          <div class="clock-widget" style="margin: 0; background: rgba(255,255,255,0.03);">
             <span>⏰</span>
             <span id="admin-clock" class="clock-time">00:00:00</span>
           </div>
-          <button onclick="showView('score-list-view')" class="btn-primary"
-            style="background: rgba(34, 211, 238, 0.1); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.2); box-shadow: none;">
-            <span>🏆</span> Attendance Performance
-          </button>
-          <button onclick="showView('admin-tasks-view')" class="btn-primary"
-            style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
-            <span>📋</span> Task Management
-          </button>
-          <button onclick="resetMatrix()" class="btn-outline"
-            style="border-color: #ef4444; color: #ef4444; font-weight: 600;">
-            <span>🗑️</span> Reset Data
-          </button>
-          <button onclick="downloadSheet()" class="btn-primary" style="padding: 0.65rem 1.25rem;">
-            <span>📄</span> Export Spreadsheet
-          </button>
-          <button onclick="logout()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600;">
+          <button onclick="logout()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 0.75rem;">
             <span>🚪</span> Sign Out
           </button>
         </div>
@@ -226,23 +215,7 @@
         </div>
       </div>
 
-      <!-- BOOSTER LEADERBOARD (ADMIN) — IPL-style points table -->
-      <div style="margin-top: 3.5rem;">
-        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem 1.5rem; margin-bottom: 1.25rem;">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div
-              style="width: 44px; height: 44px; background: white; border-radius: 0.75rem; padding: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.35); flex-shrink: 0;">
-              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <h3 style="font-size: 1.6rem; font-weight: 700;">Thiran Booster League</h3>
-          </div>
-          <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em;">Points table · order set by admin</span>
-        </div>
-        <div id="admin-booster-editor" class="glass-card fade-in" style="display: none; margin-bottom: 1.25rem; padding: 0; overflow: hidden; border: 1px solid rgba(250, 204, 21, 0.25);"></div>
-        <div class="glass-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(30, 58, 95, 0.6);">
-          <div id="admin-booster-list"></div>
-        </div>
-      </div>
+
 
       <footer
         style="margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--card-border); text-align: center;">
@@ -255,15 +228,20 @@
     <!-- ADMIN TASKS VIEW -->
     <div id="admin-tasks-view" class="view" style="display: none; padding: 2rem; max-width: 1200px; margin: auto;">
       <header class="header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 1rem 0; border-bottom: 1px solid var(--card-border);">
         <div style="display: flex; align-items: center; gap: 1.75rem;">
-          <div
-            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div
+              style="width: 42px; height: 42px; background: white; border-radius: 50%; padding: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Task Management</h1>
           </div>
-          <h1 style="font-size: 1.85rem; font-weight: 700;">Task Management</h1>
         </div>
-        <button onclick="showView('admin-view')" class="btn-outline">
+        <button onclick="showView('admin-view')" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 0.75rem;">
           <span>◁</span> Back to Dashboard
         </button>
       </header>
@@ -332,15 +310,20 @@
     <!-- SCORE LIST VIEW (Attendance Performance — full matrix) -->
     <div id="score-list-view" class="view" style="display: none; padding: 2rem; max-width: 1400px; margin: auto;">
       <header class="header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 1rem 0; border-bottom: 1px solid var(--card-border);">
         <div style="display: flex; align-items: center; gap: 1.75rem;">
-          <div
-            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div
+              style="width: 42px; height: 42px; background: white; border-radius: 50%; padding: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Attendance Performance</h1>
           </div>
-          <h1 style="font-size: 1.85rem; font-weight: 700;">Attendance Performance</h1>
         </div>
-        <button onclick="showView('admin-view')" class="btn-outline">
+        <button onclick="showView('admin-view')" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 0.75rem;">
           <span>◁</span> Back to Dashboard
         </button>
       </header>
@@ -371,33 +354,34 @@
     <!-- EMPLOYEE VIEW -->
     <div id="employee-view" class="view" style="display: none; padding: 2rem; max-width: 1100px; margin: auto;">
       <header class="header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; gap: 2.5rem;">
-        <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; min-width: 0;">
-          <h1 id="welcome-text" style="font-size: 1.85rem; font-weight: 700; margin: 0;">Hello, User</h1>
-          <div class="glass-card"
-            style="padding: 0.5rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; border-radius: 2rem;">
-            <span
-              style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Attendance
-              Score:</span>
-            <span id="user-pct-badge" style="font-weight: 800; color: var(--primary); font-size: 1.1rem;">100%</span>
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 1.25rem 0; border-bottom: 1px solid var(--card-border); gap: 2rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 1.5rem; flex: 1; min-width: 300px;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu" style="flex-shrink: 0;">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="min-width: 0;">
+            <h1 id="welcome-text" style="font-size: 1.6rem; font-weight: 800; margin: 0; line-height: 1.2;">Hello, User</h1>
+            <p id="welcome-role" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.3;"></p>
           </div>
         </div>
-        <div style="display: flex; gap: 1.75rem; align-items: center;">
-          <div class="clock-widget" style="margin-right: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; justify-content: flex-end;">
+          <div class="glass-card"
+            style="padding: 0.6rem 1.15rem; display: flex; align-items: center; gap: 0.65rem; border-radius: 2rem; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.1); flex-shrink: 0;">
+            <span
+              style="font-size: 0.65rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Booster Pts</span>
+            <span id="user-pts-badge" style="font-weight: 800; color: #fbbf24; font-size: 1.15rem;">0</span>
+          </div>
+          <div class="glass-card"
+            style="padding: 0.6rem 1.15rem; display: flex; align-items: center; gap: 0.65rem; border-radius: 2rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.1); flex-shrink: 0;">
+            <span
+              style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Attendance</span>
+            <span id="user-pct-badge" style="font-weight: 800; color: var(--primary); font-size: 1.15rem;">100%</span>
+          </div>
+          <div class="clock-widget" style="margin: 0; background: rgba(255,255,255,0.03); flex-shrink: 0;">
             <span>⏰</span>
             <span id="user-clock" class="clock-time">00:00:00</span>
           </div>
-          <button onclick="showView('employee-tasks-view')" class="btn-primary"
-            style="background: rgba(244, 114, 182, 0.1); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.2); box-shadow: none;">
-            <span>✅</span> My Tasks
-          </button>
-          <button type="button" onclick="document.getElementById('employee-booster-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })"
-            class="btn-primary"
-            style="background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.25); box-shadow: none;">
-            <img src="thiran-logo.jpg" alt="" width="22" height="22" style="width: 22px; height: 22px; object-fit: contain; border-radius: 4px; background: white; padding: 2px;">
-            Booster table
-          </button>
-          <button onclick="logout()" class="btn-outline">
+          <button onclick="logout()" class="btn-outline" style="padding: 0.6rem 1.15rem; font-weight: 600; border-radius: 0.75rem; flex-shrink: 0;">
             <span>🚪</span> Sign Out
           </button>
         </div>
@@ -424,23 +408,7 @@
         <div id="progress-strip" class="progress-container"></div>
       </div>
 
-      <!-- BOOSTER TABLE (IPL-style — visible to every employee) -->
-      <div id="employee-booster-section" style="margin-top: 4rem; scroll-margin-top: 1rem;">
-        <div class="glass-card fade-in"
-          style="padding: 2rem; background: linear-gradient(180deg, rgba(13, 27, 42, 0.95) 0%, rgba(5, 8, 16, 0.98) 100%); border: 1px solid rgba(30, 58, 95, 0.7); border-radius: 1.5rem; overflow: hidden;">
-          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 0 0.25rem;">
-            <div
-              style="display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: white; border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.35); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45); padding: 6px; flex-shrink: 0;">
-              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <div>
-              <h2 style="font-size: 1.5rem; font-weight: 800; color: white; margin: 0; line-height: 1.15;">Thiran Booster League</h2>
-             
-            </div>
-          </div>
-          <div id="user-booster-list" style="overflow-x: auto;"></div>
-        </div>
-      </div>
+
 
       <footer
         style="margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--card-border); text-align: center;">
@@ -453,15 +421,20 @@
     <!-- EMPLOYEE TASKS VIEW -->
     <div id="employee-tasks-view" class="view" style="display: none; padding: 2rem; max-width: 1000px; margin: auto;">
       <header class="header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 1rem 0; border-bottom: 1px solid var(--card-border);">
         <div style="display: flex; align-items: center; gap: 1.75rem;">
-          <div
-            style="width: 45px; height: 45px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <img src="thiran-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div
+              style="width: 42px; height: 42px; background: white; border-radius: 50%; padding: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">My Assignments</h1>
           </div>
-          <h1 style="font-size: 1.85rem; font-weight: 700;">My Assignments</h1>
         </div>
-        <button type="button" onclick="openEmployeeDashboard()" class="btn-outline">
+        <button type="button" onclick="openEmployeeDashboard()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 0.75rem;">
           <span>◁</span> Back to Dashboard
         </button>
       </header>
@@ -469,6 +442,34 @@
         <div id="user-task-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
           <!-- User tasks will appear here -->
         </div>
+      </div>
+    </div>
+
+    <!-- BOOSTER LEAGUE VIEW -->
+    <div id="booster-league-view" class="view" style="display: none; padding: 2rem; max-width: 1400px; margin: auto;">
+      <header class="header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 1rem 0; border-bottom: 1px solid var(--card-border);">
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <button class="hamburger-btn" onclick="toggleSidebar()" title="Open Menu">
+            <span style="font-size: 1.5rem;">☰</span>
+          </button>
+          <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div
+              style="width: 42px; height: 42px; background: white; border-radius: 50%; padding: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <img src="thiran-logo.jpg" alt="Thiran" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Booster League</h1>
+          </div>
+        </div>
+        <button onclick="goBackFromBooster()" class="btn-outline" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 0.75rem;">
+          <span>◁</span> Back to Dashboard
+        </button>
+      </header>
+
+      <div id="admin-booster-editor" class="glass-card fade-in" style="display: none; margin-bottom: 1.25rem; padding: 0; overflow: hidden; border: 1px solid rgba(250, 204, 21, 0.25);"></div>
+      
+      <div class="glass-card fade-in" style="padding: 2rem; background: linear-gradient(180deg, rgba(13, 27, 42, 0.95) 0%, rgba(5, 8, 16, 0.98) 100%); border: 1px solid rgba(30, 58, 95, 0.7); border-radius: 1.5rem; overflow: hidden;">
+        <div id="main-booster-list" style="overflow-x: auto;"></div>
       </div>
     </div>
 
@@ -496,6 +497,36 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div id="sidebar" class="sidebar">
+    <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+    <div class="sidebar-header">
+      <img src="thiran-logo.jpg" alt="Thiran">
+      <h3 style="font-weight: 700;">Thiran Hub</h3>
+    </div>
+    <nav class="sidebar-nav">
+      <!-- Admin Links (Hidden for Employees) -->
+      <div id="admin-nav-links" style="display:none; flex-direction:column; gap:0.75rem;">
+        <button onclick="showView('admin-view'); toggleSidebar();"><span>🏠</span> Admin Dashboard</button>
+        <button onclick="showView('score-list-view'); toggleSidebar();"><span>🏆</span> Performance</button>
+        <button onclick="showView('admin-tasks-view'); toggleSidebar();"><span>📋</span> Tasks</button>
+        <button onclick="showView('booster-league-view'); toggleSidebar();"><span>📊</span> Booster Table</button>
+      </div>
+      
+      <!-- Employee Links -->
+      <div id="employee-nav-links" style="display:none; flex-direction:column; gap:0.75rem;">
+        <button onclick="openEmployeeDashboard(); toggleSidebar();"><span>🏠</span> Dashboard</button>
+        <button onclick="showView('employee-tasks-view'); toggleSidebar();"><span>✅</span> My Tasks</button>
+        <button onclick="showView('booster-league-view'); toggleSidebar();"><span>📊</span> Booster Table</button>
+      </div>
+
+      <div style="margin-top:auto; padding-top:2rem; border-top:1px solid var(--card-border);">
+        <button onclick="logout()" style="color: #ef4444;"><span>🚪</span> Sign Out</button>
+      </div>
+    </nav>
   </div>
 
   <!-- Supabase CDN (ADD THIS LINE) -->
