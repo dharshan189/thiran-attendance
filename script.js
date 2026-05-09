@@ -12,8 +12,8 @@ const ALL_EMPLOYEES = [
     { name: "Mukunthan S", username: "mukunthan", role: "Ui/UX Designer" },
     { name: "Akash M", username: "akash", role: "Digital Media Manager" },
     { name: "Prakathesh C", username: "prakathesh", role: "Frontend Developer" },
-    { name: "Kanmani G", username: "kanmani", role: "Quality Assurance Tester" },
-    { name: "Shaik Nabeela Rayees", username: "shaik", role: "Backend Developer" },
+    { name: "Kanmani G", username: "kanmani", role: "Internal Performance and Review Manager" },
+    { name: "Shaik Nabeela Rayees", username: "shaik", role: "Quality Assurance Tester" },
     { name: "Arpit Kumar", username: "arpit", role: "Business Development manager" },
     { name: "P S Keerthana", username: "keerthana", role: "AI/ML Developer" },
     { name: "Mogesh J", username: "mogesh", role: "Data Analyst" },
@@ -21,7 +21,9 @@ const ALL_EMPLOYEES = [
     { name: "Nishanthini S", username: "nishanthini", role: "Event Coordinator" },
     { name: "Rahav V K", username: "rahav", role: "Product manager" },
     { name: "Samuel Ignatius", username: "samuel", role: "Junior Fullsatck developer" },
-    { name: "Hari Haran V", username: "hari", role: "Research & Development Manager" }
+    { name: "Hari Haran V", username: "hari", role: "Research & Development Manager" },
+    { name: "Hari prasad", username: "hariprasad", role: "Backend Developer", startMeet: 11 },
+    { name: "Vaishali", username: "vaishali", role: "Operations Monitoring", startMeet: 11 }
 ];
 
 let attendanceRecordsArray = []
@@ -292,10 +294,13 @@ async function submitTaskFile(taskId, file) {
 
 function employeeScorePercent(empName) {
     let score = 100;
+    const empObj = ALL_EMPLOYEES.find(e => e.name === empName);
+    const startIdx = (empObj && empObj.startMeet) ? empObj.startMeet - 1 : 0;
+    
     let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0));
     let hasBeenAbsent = false;
 
-    for (let i = 0; i <= maxSession; i++) {
+    for (let i = startIdx; i <= maxSession; i++) {
         const rec = attendanceRecordsArray.find(r => r.name === empName && r.sessionIndex === i);
         if (rec) {
             if (rec.status === "Absent") {
@@ -329,9 +334,14 @@ function renderMatrix() {
     let htmlBody = ""
     ALL_EMPLOYEES.forEach(empObj => {
         let emp = empObj.name
+        const startIdx = (empObj && empObj.startMeet) ? empObj.startMeet - 1 : 0;
         let score = employeeScorePercent(emp)
         let rowHtml = `<td>${emp}</td><td><span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(empObj.role || '')}</span></td>`
         for (let i = 0; i <= maxSession; i++) {
+            if (i < startIdx) {
+                rowHtml += "<td style='color:gray;'>N/A</td>"
+                continue
+            }
             const rec = attendanceRecordsArray.find(r => r.name === emp && r.sessionIndex === i)
             if (rec && rec.status === "Present") {
                 rowHtml += "<td style='color:green; font-weight:bold;'>✔ Present</td>"
@@ -385,6 +395,8 @@ function renderEmployeeAttendance() {
     }
 
     const emp = currentUser
+    const empObj = ALL_EMPLOYEES.find(e => e.name === emp)
+    const startIdx = (empObj && empObj.startMeet) ? empObj.startMeet - 1 : 0
     let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0))
 
     let htmlHeader = "<th>Player</th>"
@@ -395,6 +407,10 @@ function renderEmployeeAttendance() {
     let score = employeeScorePercent(emp)
     let rowHtml = `<td style="text-align:left !important; font-weight:700;">${escapeHtml(emp)}</td>`
     for (let i = 0; i <= maxSession; i++) {
+        if (i < startIdx) {
+            rowHtml += "<td style='color:gray;'>N/A</td>"
+            continue
+        }
         const rec = attendanceRecordsArray.find(r => r.name === emp && r.sessionIndex === i)
         if (rec && rec.status === "Present") {
             rowHtml += "<td style='color:green; font-weight:bold;'>✔ Present</td>"
@@ -409,6 +425,7 @@ function renderEmployeeAttendance() {
 
     let stripHtml = ""
     for (let i = 0; i <= maxSession; i++) {
+        if (i < startIdx) continue
         const rec = attendanceRecordsArray.find(r => r.name === emp && r.sessionIndex === i)
         let label = "—"
         let extraClass = ""
@@ -444,12 +461,15 @@ async function refreshEmployeeDashboard() {
 
 // ================== BOOSTER LEAGUE (IPL-style points table, A–Z) ==================
 function getSessionBreakdown(empName) {
+    const empObj = ALL_EMPLOYEES.find(e => e.name === empName);
+    const startIdx = (empObj && empObj.startMeet) ? empObj.startMeet - 1 : 0;
+    
     let maxSession = Math.max(0, ...attendanceRecordsArray.map(r => r.sessionIndex || 0))
-    const P = maxSession + 1
+    const P = Math.max(0, maxSession - startIdx + 1)
     let W = 0
     let L = 0
     let NR = 0
-    for (let i = 0; i <= maxSession; i++) {
+    for (let i = startIdx; i <= maxSession; i++) {
         const rec = attendanceRecordsArray.find(r => r.name === empName && r.sessionIndex === i)
         if (rec && rec.status === 'Present') W++
         else if (rec && rec.status === 'Absent') L++
